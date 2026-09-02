@@ -1,0 +1,49 @@
+name: Architecture proposal
+description: Propose a cross-repository contract or architectural decision.
+title: "[Architecture]: "
+labels:
+  - "status: triage"
+type: Feature
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and problem
+      description: Describe the current contract, constraint, and reason a decision is needed.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed decision
+      description: State ownership, boundaries, data flow, and the intended end state.
+    validations:
+      required: true
+  - type: textarea
+    id: repositories
+    attributes:
+      label: Affected repositories and contracts
+      description: Identify the parent issue owner and each repository that needs a sub-issue.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include keeping the current contract when it is a viable option.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Security, data, operations, and compatibility consequences
+      description: Cover secrets, persistence, migrations, recovery, release, and client rollout as applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation and adoption plan
+      description: Define acceptance evidence, documentation updates, and a staged rollout or state why none is needed.
+    validations:
+      required: true

@@ -1,0 +1,58 @@
+name: Bug
+description: Report incorrect, unsafe, or missing documented behavior.
+title: "[Bug]: "
+labels:
+  - "status: triage"
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, Secret values, recovery material, or sensitive request data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is wrong, and what is the user or operator impact?
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Proposed priority
+      options:
+        - P0 - active critical incident or data/security loss
+        - P1 - release or deployment blocker
+        - P2 - important correctness or operational gap
+        - P3 - planned improvement
+        - P4 - investigation or long-term work
+    validations:
+      required: true
+  - type: textarea
+    id: repositories
+    attributes:
+      label: Affected repositories
+      description: List the owning and consuming repositories if known.
+      placeholder: documentation, k8s_stack_base
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction or evidence
+      description: Provide the smallest safe reproduction, file references, logs, or screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected contract
+      description: What should happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance checks
+      description: List the checks that would prove the fix complete.
+    validations:
+      required: true

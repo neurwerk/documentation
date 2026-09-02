@@ -1,0 +1,54 @@
+name: Task
+description: Propose a bounded implementation, documentation, or operations task.
+title: "[Task]: "
+labels:
+  - "status: triage"
+type: Task
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: Describe the required result rather than only the activity.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Proposed priority
+      options:
+        - P0 - active critical incident or data/security loss
+        - P1 - release or deployment blocker
+        - P2 - important correctness or operational gap
+        - P3 - planned improvement
+        - P4 - investigation or long-term work
+    validations:
+      required: true
+  - type: textarea
+    id: repositories
+    attributes:
+      label: Owning repositories
+      description: List every repository that must change and identify the contract owner.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: State what is in scope and any important exclusions.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: "- [ ] Focused validation passes"
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and rollout
+      description: Link blockers, parent or sub-issues, release requirements, and rollout constraints. Use None when absent.
+    validations:
+      required: true

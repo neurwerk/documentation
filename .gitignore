@@ -1,0 +1,6 @@
+/.DS_Store
+/.git_backup*/
+/.obsidian/workspace.json
+/todos
+__pycache__/
+*.py[cod]
