@@ -65,8 +65,9 @@ remain the source for aggregate latency and reliability views.
 
 ### Trace Content
 
-Every model and MCP destination must set `contentTracingEnabled` explicitly.
-Omission defaults to `true` and may retain:
+The platform explicitly sets `contentTracingEnabled: true` on inherited
+OpenRouter models. Clients must set it explicitly on direct or custom models
+including local models, and MCP destinations. A true value may retain:
 
 - model prompts and textual completions;
 - MCP tool arguments and results.

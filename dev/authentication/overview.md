@@ -66,6 +66,13 @@ Model requests require both `llm:invoke` and the matching
 `model:<model-id>:invoke` permission. MCP requests require `llm:invoke` and the
 matching `mcp:<server-id>:invoke` permission.
 
+The platform derives roles for enabled, non-excluded OpenRouter snapshot models.
+By default it adds those roles to every client-declared AgentGateway access
+group. Clients continue to declare broad `llm:invoke`, MCP roles, and roles for
+their direct, local, or custom model destinations. Dify and managed API-key
+grants remain explicit subsets and are validated against the effective role
+catalog.
+
 API keys contain an immutable permission grant. During validation, the API-key
 bridge intersects that grant with the enabled principal's current AgentGateway
 roles. Revoked or expired keys and disabled principals are rejected.

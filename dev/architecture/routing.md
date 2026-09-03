@@ -81,7 +81,10 @@ from the reviewed model catalog; it cannot create or override catalog policy.
 Each MCP server has an exact `/mcp/<server-id>` route. Fail-closed extProc
 enforces MCP `2025-11-25` and processes PII where enabled.
 
-- Models are configured in
+- Reviewed OpenRouter models are inherited from the platform snapshot. Clients
+  may disable that catalog or exclude exact upstream IDs in
+  `client_*/config/client.yaml` under `openrouterCatalog`.
+- Direct, local, and custom models are configured in
   `client_*/infrastructure/networking/agentgateway/values.yaml`.
 - MCP servers are configured in `client_*/config/client.yaml`.
 - Static MCP IDs may be dotted DNS subdomains. Workload-backed IDs must be one
@@ -98,6 +101,11 @@ both chart defaults are `true`.
 Provider and MCP credentials come from OpenBao-backed Secrets, never ConfigMaps
 or client values. See [API Keys](../authentication/api-keys.md),
 [PII Policy Engine](pii-policy-engine.md), and [Secrets](secrets.md).
+
+The effective model catalog is capped at 512 destinations. AgentGateway derives
+the callable model resources, extProc destination metadata, and required model
+permissions from that same effective list. An OpenRouter exclusion therefore
+removes serving and authorization together.
 
 ### Private RAG Embedding Listener
 

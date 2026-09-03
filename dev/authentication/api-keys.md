@@ -53,7 +53,8 @@ The Dify managed grant and Keycloak service account use
 
 - include `llm:invoke`;
 - contain no duplicates;
-- be a subset of `authKeycloak.agentgatewayClientRoles`;
+- be a subset of the effective AgentGateway role catalog, including inherited
+  OpenRouter model roles;
 - include `model:<model-id>:invoke` for every configured Dify model.
 
 ## Validation

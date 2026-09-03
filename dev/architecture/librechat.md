@@ -58,7 +58,7 @@ admin browser
 The generated LibreChat configuration uses schema `1.3.14`. It:
 
 - exposes only the configured AgentGateway endpoint;
-- fetches the available model list from AgentGateway;
+- renders the effective reviewed model list as grouped model specifications;
 - generates conversation titles after the final response;
 - maps provider reasoning through custom endpoint parameters to
   `reasoning_content` and retains reasoning in chat history;
@@ -126,10 +126,19 @@ enabled. RAG and Code Interpreter capabilities remain independently gated by
 their feature selections.
 
 Every configured destination has independent `piiEnabled` and
-`contentTracingEnabled` settings. Both chart defaults are `true`; clients should
-state both values explicitly. Requests use fail-closed external processing.
+`contentTracingEnabled` settings. The platform sets both to `true` for inherited
+OpenRouter models. Clients must set both explicitly for direct, local, and other
+custom models and MCP destinations. Requests use fail-closed external processing.
 AgentGateway removes caller credentials before forwarding requests to a model or
 MCP backend.
+
+LibreChat uses one-level collapsible model groups. Inherited models use groups
+such as `Remote-OpenRouter-OpenAI` and `Remote-OpenRouter-Anthropic`; direct
+providers use groups such as `Remote-DeepSeek`; local models use `Local`. The
+group metadata and model specifications are rendered from the same effective
+catalog used by AgentGateway after client exclusions. Raw model fetching is
+disabled to avoid duplicate ungrouped rows. `modelSpecs.enforce` remains false
+so the Agents endpoint continues to work.
 
 RAG and Code Interpreter use private Services. Code Interpreter traffic does
 not pass through AgentGateway or the PII Engine.
