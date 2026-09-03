@@ -114,9 +114,11 @@ the pull request.
 A platform release starts with the base release-proposal form, which creates a
 native `Task`. The preparation workflow opens a draft pull request containing
 the version, changelog, migration document, release configuration, and generated
-manifest. Complete its release evidence and pass release checks before review.
-Merging the pull request does not authorize or create the signed tag or GitHub
-Release.
+manifest. For a new-format release, review the explicit stable-upgrade policy,
+the mandatory `Breaking Changes` section, and any release-specific checkpoint
+instructions. Complete its release evidence and pass release checks before
+review. Merging the pull request does not authorize or create the signed tag or
+GitHub Release.
 
 After a stable platform release is published, automation may open a draft client
 adoption pull request. The draft starts in a fail-closed review state. A
@@ -124,6 +126,11 @@ maintainer must review and commit the exact target state, satisfy `Platform
 Compatibility`, and complete any repository-specific approval before merge.
 Automation must not select the target state, merge, deploy, reconcile Flux,
 change Secrets, or contact a cluster.
+
+A skipped-version upgrade does not collapse these boundaries: operators review
+and apply every crossed release's migration and breaking-change instructions in
+ascending order, maintainers authorize the exact client change, and deployment
+or reconciliation still requires its separate authorization.
 
 See the [platform release runbook](../operations/platform-releases.md) for release
 preparation, signing, publication, compatibility, and client adoption details.

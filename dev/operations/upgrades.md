@@ -9,13 +9,16 @@ Kubernetes control-plane changes.
 
 ## Current Support
 
-The only published platform release is `v0.1.0`.
+The latest published platform release is `v0.1.1`.
 
-| Target | Fresh installation | Supported upgrade sources | Downgrade | Recovery |
+| Target | Contract | Stable upgrade sources | Alpha promotion | Downgrade |
 | --- | --- | --- | --- | --- |
-| `v0.1.0` | Supported on an empty target | None | Unsupported | Replacement restore |
+| `v0.1.0` | Legacy allowlist | None | None | Unsupported |
+| `v0.1.1` | Legacy allowlist | None | Exact revision declared by `v0.1.1` | Unsupported |
 
-No in-place platform release upgrade is currently supported.
+The published contracts are immutable. Neither permits an in-place upgrade from
+a stable release. `v0.1.1` permits promotion only from its exact declared alpha
+revision.
 
 The selected target tag is authoritative. Check:
 
@@ -23,7 +26,16 @@ The selected target tag is authoritative. Check:
 - `release/migrations/vX.Y.Z.md` for operator actions, checks, exclusions, and
   recovery limits.
 
-The files must agree. An empty `upgradesFrom` list means fresh-install-only.
+The files must agree. Published `v0.1.0` and `v0.1.1` use immutable legacy
+`upgradesFrom` allowlists. Beginning with a future release, compatibility uses
+`stableUpgrade`:
+
+- `supported` is the default and permits an upgrade from any exact stable tag
+  with a strictly lower SemVer, including a skipped-version upgrade;
+- `fresh-install-only` prohibits an in-place stable upgrade.
+
+Every release supports installation into a verified empty or replacement
+environment. Downgrades are unsupported.
 
 ## Stable Adoption
 
@@ -32,10 +44,11 @@ A client selects one exact signed release tag in
 
 Use `platform.neurwerk.com/adoption-mode` as follows:
 
-- `upgrade`: the target manifest must list the current exact tag in
-  `upgradesFrom`;
-- `fresh-install`: the target must support fresh installation, and the operator
-  must verify that the target is empty or is a replacement environment.
+- `upgrade`: a legacy target must list the current exact tag in `upgradesFrom`;
+  a new-format target must set `stableUpgrade: supported`, and its exact SemVer
+  must be strictly newer than the current exact stable tag;
+- `fresh-install`: the operator must verify that the target is empty or is a
+  replacement environment.
 
 The compatibility check verifies the signed tag, published GitHub Release,
 manifest, migration document, adoption mode, and source version. It does not
@@ -48,23 +61,32 @@ Alpha may select `base` `main` or one full commit SHA using the separate alpha
 trust root. It is not a published release contract.
 
 Before selecting stable, freeze a changing alpha branch to the observed commit
-and reconcile it. A forward upgrade requires that commit in the target
-manifest's `upgradesFromAlphaRevisions` and in its migration document. A fresh
-installation requires explicit fresh-install support.
+and reconcile it. A forward upgrade requires that exact commit in the target
+manifest's `upgradesFromAlphaRevisions` and migration document. This exact alpha
+upgrade contract is unchanged by `stableUpgrade`. Fresh installation instead
+requires a verified empty or replacement environment.
 
-## Before a Supported Transition
+## Before a Supported Upgrade
 
-1. Verify the signed tag, manifest, migration document, prerequisites, packages,
-   exclusions, and exact supported source.
-2. Follow every pre-deployment action in the migration document.
+1. Verify the current and target exact signed tags, target manifest,
+   prerequisites, packages, exclusions, and supported transition.
+2. Review and apply the migration and `Breaking Changes` instructions for every
+   crossed release in ascending SemVer order, including the target release.
+   Complete any checkpoint only where those instructions require one.
 3. Create application-consistent backups outside the production storage failure
    domain. Restore them in a replacement environment and verify integrity.
 4. Test the exact transition and recovery action on a disposable cluster.
 5. Define application-level readiness checks. A Ready controller or
    `HelmRelease` does not prove that stored data is usable.
 
-Stop if any required evidence or procedure is missing. Do not infer support from
-an upstream compatibility statement or a patch or minor version number.
+Stop if any required evidence or procedure is missing. Do not invent an
+intermediate checkpoint or infer support from an upstream compatibility
+statement.
+
+Fresh installation does not require per-release upgrade evidence. Before a fresh
+installation, verify that the target is empty or is a replacement environment,
+then verify the release prerequisites, client values, storage, DNS, certificates,
+and external credentials.
 
 ## Recovery Actions
 
@@ -89,13 +111,27 @@ documents and tests an exact transition.
 | Kubernetes and K3s | Control-plane datastore, API objects, and encrypted Secrets | K3s is outside the platform release contract. Back it up and test it separately. |
 | Rook/Ceph | OSD device, monitor host data, RBD volumes, RGW objects, and snapshots | The single-node stack is one failure domain. Retention is not disaster recovery. |
 | OpenBao and internal CA | Raft volume, static-seal and recovery material, and the cert-manager CA Secret | Snapshot upload is disabled. Verify OpenBao unsealing, certificate issuance, and workload trust. |
-| PostgreSQL | Separate authentication and operations claims | Operations consumers share one process, volume, maintenance window, and recovery point. Restore each affected instance completely. |
+| PostgreSQL | Separate authentication and operations claims; operations includes durable AgentGateway request logs | AgentGateway usage records, Dify, Langfuse, LibreChat, and LibreChat RAG share one operations process, volume, maintenance window, and recovery point. Restore each affected instance completely. |
 | API-key bridge | SQLite API-key database | Verify restored data and Keycloak authorization. |
 | Dify | Operations PostgreSQL, Redis, application files, and plugin files | The sandbox dependency cache is disposable. Classify Redis and file recovery explicitly. |
 | LibreChat core | Operations PostgreSQL, Valkey, Meilisearch, compatibility image PVC, and optional RGW objects | Verify conversations, search, cache recovery, and files. `v0.1.0` excludes RAG and Code Interpreter. |
 | Langfuse | Operations PostgreSQL, ClickHouse, Redis or Valkey, and RGW objects | Restore and verify traces across all stores. |
 | Observability | OpenSearch indices and snapshots, Prometheus metrics, and Alertmanager state | OpenSearch snapshots share the Ceph failure domain. Decide which history requires independent recovery. |
 | PII Engine | Valkey state, model cache, and authoritative RGW model objects | Rebuild the cache only from verified model objects. |
+
+## AgentGateway Usage Prerequisite
+
+A target that enables AgentGateway PostgreSQL request logging must declare an
+exact `openbao-stack-setup` package version and immutable tooling commit with
+reconciliation schema `4`. Before selecting that platform source, run the exact
+declared tool and verify successful schema-4 reconciliation. If the target
+manifest does not yet contain those exact identifiers, the transition is not
+ready; do not invent a release ID, tool version, or commit.
+
+The target release must order operations PostgreSQL before AgentGateway and
+AgentGateway before Studio. Treat the new `agentgateway` role, database, and
+indefinitely retained metadata-only request logs as persistent forward-sensitive
+state covered by the complete operations PostgreSQL backup and restore plan.
 
 ## CRD Changes
 

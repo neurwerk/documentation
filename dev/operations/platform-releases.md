@@ -11,8 +11,16 @@ Platform versions are separate from chart, application, and image versions.
 Platform tags use strict SemVer in the form `vX.Y.Z`. Each new version must be
 newer than the previous signed release.
 
-Compatibility is explicit. A source tag or alpha commit is supported only when
-the release configuration and migration document list it.
+Compatibility is explicit. Published `v0.1.0` and `v0.1.1` retain their
+immutable legacy stable-source allowlists. Beginning with a future release,
+`compatibility.stableUpgrade` is explicitly `supported` or
+`fresh-install-only`. `supported` is the default and permits any strictly
+forward transition between exact stable SemVer tags, including skipped
+versions. Alpha promotion remains limited to exact commits listed by the target
+release.
+Every platform release supports installation into a verified empty or
+replacement environment; fresh installation is not a release-specific
+compatibility field. Downgrades are unsupported.
 
 Each release commit contains:
 
@@ -85,9 +93,9 @@ Publish and verify required images through the
 2. Merge the reviewed implementation work included in the release. Update chart
    metadata whenever packaged chart content changed.
 3. Run the manual `Prepare Release PR` workflow in `base` using `successor` mode.
-   Provide the new version, current signed tag, release date, summary,
-   fresh-install support, supported source tags, supported alpha commits, and
-   recovery classification.
+   Provide the new version, current signed tag, release date, summary, stable
+   upgrade policy, supported alpha commits, and recovery classification. The
+   workflow defaults the stable policy to `supported`.
 4. The workflow verifies the signed predecessor and opens a draft branch named
    `release/vX.Y.Z`. It changes only the five release evidence files listed
    above.
@@ -104,20 +112,35 @@ token allows the draft pull request to run normal `Required CI`.
 
 ### Migration Document
 
-Every migration document uses these level-two headings:
+Every new-format migration document uses these level-two headings:
 
 - `Support`
 - `Prerequisites`
 - `Client Actions`
+- `Breaking Changes`
 - `Stateful And API Effects`
 - `Pre-Deployment Checks`
 - `Post-Deployment Checks`
 - `Recovery`
 - `Exclusions`
 
-The `Support` section declares fresh-install support, exact stable source tags,
-exact full alpha source commits, and downgrade support. Write `None.` when there
-are no supported stable sources or alpha commits.
+For every new-format release, the `Support` section uses exactly one of these
+lines:
+
+```text
+- Stable upgrades: Supported.
+- Stable upgrades: Fresh installation only.
+```
+
+It also declares exact full alpha source commits and unsupported downgrade
+behavior. The mandatory `Breaking Changes` section contains the instructions
+operators must apply or `None.` when there are none. A migration document
+describes a checkpoint only when that release needs one; checkpoints are not a
+machine-readable compatibility field.
+
+The immutable `v0.1.0` and `v0.1.1` migration documents retain their legacy
+exact stable-source declarations. Write `None.` when there are no supported
+alpha commits or legacy stable sources.
 
 The `Recovery` section uses one classification:
 
@@ -234,10 +257,13 @@ For each draft:
 
 1. Review the release manifest, migration document, client values, required
    Secrets, and target state.
-2. Use `upgrade` only when the release lists the current stable tag or resolved
-   alpha commit as a supported source.
-3. Use `fresh-install` only when the release supports it and a maintainer has
-   verified that the target is empty.
+2. Use `upgrade` for a stable source only when the target's applicable legacy
+   allowlist permits it or its new-format policy is `stableUpgrade: supported`
+   and the target is strictly newer. Review every crossed release's migration
+   and breaking-change instructions in ascending order. Use `upgrade` for alpha
+   promotion only when the target lists the exact reconciled alpha commit.
+3. Use `fresh-install` only when a maintainer has verified that the target is
+   empty or is a replacement environment.
 4. Confirm that `adoption-target` exactly matches the selected tag and that
    `Platform Compatibility` passes.
 5. Merge the exact reviewed commit. This merge is the adoption authorization

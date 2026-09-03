@@ -195,8 +195,9 @@ Code Interpreter uses a separate retained RGW bucket, a Valkey store, and a
 retained package PVC. Its file server uses the internal RGW Service.
 
 PostgreSQL and these Rook stores share a single-node physical failure domain.
-Retention is not backup. The current release contract supports fresh installs;
-it does not declare a supported upgrade or downgrade path. See
+Retention is not backup. The latest published release, `v0.1.1`, supports
+installation only into an empty or replacement target and its exact alpha
+promotion; it declares no stable in-place upgrade or downgrade path. See
 [Shared PostgreSQL](postgresql.md#persistence-and-recovery) and
 [Rook/Ceph Storage](rook-ceph.md).
 
