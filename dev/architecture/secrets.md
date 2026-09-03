@@ -139,12 +139,26 @@ Shared PostgreSQL uses two namespace-isolated records:
 | Record | Fields |
 | --- | --- |
 | `infra-postgres-auth/internal` | `adminPassword`, `keycloakPassword` |
-| `infra-postgres-operations/internal` | `adminPassword`, `documentdbPassword`, `difyPassword`, `langfusePassword`, `librechatRagPassword` |
+| `infra-postgres-operations/internal` | `adminPassword`, `agentgatewayPassword`, `documentdbPassword`, `difyPassword`, `langfusePassword`, `librechatRagPassword` |
 
 Each PostgreSQL administrator password is generated independently. Application
 passwords are exact copies of the corresponding application credentials, so the
 application and database use the same value without cross-namespace access.
 See [Shared PostgreSQL](postgresql.md#credentials) for the field mapping.
+
+AgentGateway's canonical PostgreSQL password is generated at
+`infra-agentgateway/internal:postgresqlPassword`. Reconciliation copies that
+exact value to
+`infra-postgres-operations/internal:agentgatewayPassword`; a conflicting copy
+fails closed. External Secrets delivers the source value to a dedicated
+AgentGateway runtime Secret and the copy to the PostgreSQL provisioning values.
+
+AgentGateway receives the runtime password through `secretKeyRef` and expands
+it into the database URL at process startup. The literal password must not be
+rendered into AgentGateway configuration or a ConfigMap. Studio calls the
+private AgentGateway analytics API and receives neither this database credential
+nor direct database access. Studio also receives no Langfuse project credential
+for usage analytics; Langfuse retains its own tracing credentials and storage.
 
 ## Safety Rules
 

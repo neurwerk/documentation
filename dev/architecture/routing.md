@@ -121,8 +121,22 @@ paths, including PII Engine and OpenSearch, use verified internal TLS.
 
 Studio API authorizes browser requests and proxies policy evaluation to PII
 Engine over mTLS. It also proxies authorized operations to Keycloak, the API-key
-bridge, Langfuse, and OpenSearch. Browsers do not call those services directly.
-Studio has no AgentGateway model-discovery or live model-test route.
+bridge, and OpenSearch. Browsers do not call those services directly. Studio has
+no AgentGateway model-discovery or live model-test route.
+
+For usage, Studio preserves its public
+`GET /api/users/{user_id}/usage` endpoint and sends principal-filtered queries to
+AgentGateway's private `POST /api/logs/analytics/summary` admin API. Studio is the
+only client of that API and uses one configurable private base URL; it does not
+query PostgreSQL directly. The admin Service and port `15000` are never exposed
+through an `HTTPRoute` or public Gateway listener.
+
+AgentGateway 1.5's admin listener has no authentication and exposes more than
+the analytics path. NetworkPolicy limits access to the Studio API workload and
+port, but cannot isolate individual HTTP paths. The resulting configuration-dump
+and shutdown-route exposure to a compromised Studio API Pod is an explicitly
+accepted development risk. Introduce admin authentication or a path-restricting
+proxy before production use or before adding API-key and budget administration.
 
 When enabled, LibreChat calls its RAG and Code Interpreter services directly
 over private HTTP. Application authentication and NetworkPolicy protect those

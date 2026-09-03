@@ -8,7 +8,7 @@ separate from application and observability data.
 | Release | Namespace | Runtime | Consumers |
 | --- | --- | --- | --- |
 | `postgres-auth` | `infra-postgres-auth` | `docker.io/postgres:18.6-alpine3.24` | Keycloak |
-| `postgres-operations` | `infra-postgres-operations` | `ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.116.0` | Dify, Langfuse, LibreChat, and LibreChat RAG |
+| `postgres-operations` | `infra-postgres-operations` | `ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.116.0` | AgentGateway, Dify, Langfuse, LibreChat, and LibreChat RAG |
 
 The platform owns the charts and release contracts:
 
@@ -49,6 +49,7 @@ and a MongoDB-compatible DocumentDB gateway in one StatefulSet.
 
 | Consumer | Role | Database | Additional contract |
 | --- | --- | --- | --- |
+| AgentGateway | `agentgateway` | `agentgateway` | Durable metadata-only request logs used by Studio usage analytics. |
 | Dify | `dify` | `dify`, `dify_plugin`, `dify_vector` | The `vector` extension is installed in `dify_vector`. |
 | Langfuse | `langfuse` | `postgres_langfuse` | The chart's PostgreSQL dependency is disabled. |
 | LibreChat RAG | `librechat_rag` | `librechat_rag` | The `vector` extension is installed. |
@@ -63,10 +64,10 @@ LibreChat must remain the only MongoDB-compatible consumer of this instance. A
 second consumer requires a separate DocumentDB instance because `librechat`
 could access its databases.
 
-This limitation does not grant LibreChat access to the Dify, Langfuse, or
-LibreChat RAG PostgreSQL databases. Those databases use separate roles, grants,
-and port-scoped NetworkPolicies. Provisioning also verifies that `librechat`
-cannot connect to them.
+This limitation does not grant LibreChat access to the AgentGateway, Dify,
+Langfuse, or LibreChat RAG PostgreSQL databases. Those databases use separate
+roles, grants, and port-scoped NetworkPolicies. Provisioning also verifies that
+`librechat` cannot connect to them.
 
 ## Provisioning
 
@@ -84,7 +85,7 @@ before it succeeds.
 | Connection | Transport |
 | --- | --- |
 | Keycloak to `postgres-auth:5432` | TLS with exact service identity verification |
-| Dify, Langfuse, and LibreChat RAG to `postgres-operations:5432` | SCRAM authentication over plaintext PostgreSQL |
+| AgentGateway, Dify, Langfuse, and LibreChat RAG to `postgres-operations:5432` | SCRAM authentication over plaintext PostgreSQL |
 | LibreChat to `postgres-operations:10260` | TLS with the platform internal CA |
 
 Plaintext PostgreSQL is an accepted exception for `postgres-operations` only.
@@ -92,6 +93,8 @@ It does not apply to `postgres-auth` or the DocumentDB gateway.
 
 Both PostgreSQL namespaces are default-deny. Ingress policies allow only the
 approved consumer Pods and provisioning Jobs on the required container port.
+The operations PostgreSQL policy permits the exact AgentGateway data-plane Pod
+identity on destination Pod port `9712`, which backs Service port `5432`.
 Consumer egress policies select the destination namespace, Pod identity, and
 port. Database grants provide a separate authorization boundary.
 
@@ -106,7 +109,7 @@ LibreChat and the provisioning Job verify it with
 | Record | Fields |
 | --- | --- |
 | `infra-postgres-auth/internal` | `adminPassword`, `keycloakPassword` |
-| `infra-postgres-operations/internal` | `adminPassword`, `documentdbPassword`, `difyPassword`, `langfusePassword`, `librechatRagPassword` |
+| `infra-postgres-operations/internal` | `adminPassword`, `agentgatewayPassword`, `documentdbPassword`, `difyPassword`, `langfusePassword`, `librechatRagPassword` |
 
 Each `adminPassword` is generated independently. Application passwords are
 copied from their existing namespace-owned records:
@@ -114,6 +117,7 @@ copied from their existing namespace-owned records:
 | Destination | Source |
 | --- | --- |
 | `infra-postgres-auth/internal:keycloakPassword` | `auth-keycloak/internal:dbPassword` |
+| `infra-postgres-operations/internal:agentgatewayPassword` | `infra-agentgateway/internal:postgresqlPassword` |
 | `infra-postgres-operations/internal:documentdbPassword` | `frontend-librechat/internal:documentdbPassword` |
 | `infra-postgres-operations/internal:difyPassword` | `frontend-dify/internal:postgresPassword` |
 | `infra-postgres-operations/internal:langfusePassword` | `monitor-langfuse/internal:postgresqlPassword` |
@@ -137,10 +141,10 @@ DocumentDB data directory is `/data/postgresql` on the operations claim mounted
 at `/data`.
 
 All operations databases share one process, data directory, PVC, maintenance
-window, and recovery point. A failure or restore affects Dify, Langfuse,
-LibreChat, and LibreChat RAG together. The authentication release is a separate
-logical recovery domain, but both claims use the same single-node Rook/Ceph
-physical failure domain.
+window, and recovery point. A failure or restore affects AgentGateway request
+logs, Dify, Langfuse, LibreChat, and LibreChat RAG together. The authentication
+release is a separate logical recovery domain, but both claims use the same
+single-node Rook/Ceph physical failure domain.
 
 PVC retention is not a backup. Recovery requires an application-consistent,
 independently stored backup of the complete affected instance.

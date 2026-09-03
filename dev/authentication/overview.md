@@ -48,9 +48,19 @@ Examples include:
 - `pii-admin`: use Studio's PII policy tools.
 - `keycloak-admin`: use Keycloak administration features.
 - `api-key-admin`: manage API keys for another user.
+- `langfuse-admin`: view another principal's usage in Studio. The historical
+  role name remains the authorization contract even though usage is sourced
+  from AgentGateway rather than Langfuse.
 
 Applications must enforce roles at the API boundary. Hiding a feature in the UI
 is not authorization.
+
+Studio permits callers to read their own usage. Reading another principal's
+usage requires the existing `langfuse-admin` realm role and does not grant
+access to that user's Keycloak profile. The Studio API enforces both cases and
+uses the authorized route's opaque target user ID to filter records. AgentGateway
+sets each stored record's attribution only from verified identity; the browser
+does not call AgentGateway or set that attribution value.
 
 ### AgentGateway Permissions
 
@@ -83,6 +93,9 @@ roles. Revoked or expired keys and disabled principals are rejected.
   expiry, subject, and required roles before trusting claims.
 - AgentGateway derives identity only from a verified JWT `sub` claim or the
   API-key bridge's trusted authorization response.
+- AgentGateway records the verified JWT `sub` or trusted API-key
+  `principal_id` as the opaque `agentgateway.user` usage attribute. OIDC and API
+  key traffic for the same user therefore aggregate under the same principal.
 - AgentGateway removes caller credentials and reserved identity headers before
   forwarding requests to model or MCP backends.
 - Backend credentials are managed separately from caller credentials.

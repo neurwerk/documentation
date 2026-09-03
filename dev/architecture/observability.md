@@ -59,9 +59,37 @@ AgentGateway data plane
 -> ClickHouse, Valkey, Ceph object storage, and shared PostgreSQL
 ```
 
-Langfuse stores traces for request-level investigation. Studio also uses
-Langfuse to calculate per-user token and cost totals. Prometheus and Grafana
-remain the source for aggregate latency and reliability views.
+Langfuse stores traces for request-level investigation. Prometheus and Grafana
+remain the source for aggregate latency and reliability views. Studio usage
+analytics are a separate AgentGateway request-log flow; moving usage does not
+change AgentGateway OTLP tracing or Langfuse storage.
+
+## Studio Usage Analytics
+
+```text
+AgentGateway data plane
+-> agentgateway database in operations PostgreSQL
+-> AgentGateway private analytics API
+-> Studio API
+-> Studio web
+```
+
+AgentGateway attributes each request-log row to the opaque, verified principal:
+the JWT `sub` for OIDC or the API-key bridge's trusted `principal_id` for an API
+key. Both paths populate `agentgateway.user`; caller-supplied identity headers
+are not an attribution source.
+
+For each of Studio's supported calendar and rolling periods, Studio reports:
+
+- calls, defined as matching AgentGateway request-log rows;
+- total tokens reported by AgentGateway;
+- realized cost in USD reported by AgentGateway.
+
+The analytics contract does not provide separate input and output token totals.
+AgentGateway stores LLM request logs in metadata-only mode, so the request-log
+payload store does not retain prompts or completions. This is separate from the
+Langfuse trace-content policy described below. Request-log records are retained
+indefinitely for now; there is no automated retention Job or expiry policy.
 
 ### Trace Content
 
@@ -141,6 +169,8 @@ JSON, not the Grafana UI.
 - Langfuse's `postgres_langfuse` database shares the operations PostgreSQL
   process, PVC, and recovery point. See
   [Shared PostgreSQL](postgresql.md#persistence-and-recovery).
+- AgentGateway request logs in the `agentgateway` database share that same
+  operations PostgreSQL process, PVC, and recovery point.
 - Critical-alert delivery depends on Alertmanager, DNS, the SMTP provider, and
   the OpenBao-backed SMTP credential.
 - A healthy collector, logger, or application Pod does not prove end-to-end

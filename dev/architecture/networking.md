@@ -93,10 +93,12 @@ controller identities. Egress permits DNS, verified-TLS access to
 `infra-postgres-auth` is default-deny. Its TLS PostgreSQL listener accepts only
 Keycloak and its provisioning Job.
 
-`infra-postgres-operations` is default-deny. Exact Dify, Langfuse, LibreChat RAG,
-and provisioning identities may use its plaintext PostgreSQL listener with
-SCRAM authentication. The DocumentDB gateway uses verified TLS and accepts only
-LibreChat and the provisioning Job. See
+`infra-postgres-operations` is default-deny. The exact AgentGateway data-plane,
+Dify, Langfuse, LibreChat RAG, and provisioning identities may use its plaintext
+PostgreSQL listener with SCRAM authentication. AgentGateway reaches the
+`agentgateway` database through Service port `5432`; ingress is restricted on
+the backing destination Pod port `9712`. The DocumentDB gateway uses verified
+TLS and accepts only LibreChat and the provisioning Job. See
 [Shared PostgreSQL](postgresql.md#transport-and-network-policy).
 
 ### AgentGateway, PII Engine, And Studio
@@ -108,9 +110,20 @@ analysis port. See [Routing](routing.md#agentgateway) and
 [PII Policy Engine](pii-policy-engine.md#request-flow).
 
 The Studio API Pod has egress allowances for DNS, PII Engine, Keycloak, the
-API-key bridge, Langfuse, and OpenSearch. It has no AgentGateway or model-provider
-egress allowance. The `frontend-studio` namespace has no default-deny baseline,
-so this statement applies only to the selected API Pod.
+API-key bridge, OpenSearch, and the AgentGateway data-plane admin port `15000`.
+It has no Langfuse usage or model-provider egress allowance. AgentGateway
+ingress on `15000` permits only the Studio API Pod identity. The
+`frontend-studio` namespace has no default-deny baseline, so this statement
+applies only to the selected API Pod.
+
+The AgentGateway admin listener is unauthenticated in the current development
+deployment. Port-scoped NetworkPolicies restrict which workload can reach it,
+but standard NetworkPolicy cannot restrict HTTP paths. A compromised Studio API
+Pod could therefore call other admin routes, including configuration dump and
+shutdown routes; the configuration dump may expose the expanded database URL.
+This is an accepted development risk, not a production-ready boundary. Add
+admin authentication or a path-restricting proxy before production use. Never
+expose port `15000` through a public listener or `HTTPRoute`.
 
 ### Rook/Ceph And Code Interpreter
 
