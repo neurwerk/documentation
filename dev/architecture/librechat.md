@@ -59,6 +59,12 @@ The generated LibreChat configuration uses schema `1.3.14`. It:
 
 - exposes only the configured AgentGateway endpoint;
 - renders the effective reviewed model list as grouped model specifications;
+- uses that same effective list as the custom endpoint's static request-validation
+  allowlist;
+- hides the duplicate raw endpoint selector while retaining grouped model
+  selection;
+- optionally marks one client-selected model as the hard default for every new
+  chat, overriding the browser's last selection;
 - generates conversation titles after the final response;
 - maps provider reasoning through custom endpoint parameters to
   `reasoning_content` and retains reasoning in chat history;
@@ -134,11 +140,16 @@ MCP backend.
 
 LibreChat uses one-level collapsible model groups. Inherited models use groups
 such as `Remote-OpenRouter-OpenAI` and `Remote-OpenRouter-Anthropic`; direct
-providers use groups such as `Remote-DeepSeek`; local models use `Local`. The
-group metadata and model specifications are rendered from the same effective
-catalog used by AgentGateway after client exclusions. Raw model fetching is
+providers use groups such as `Remote-DeepSeek`; direct models may set an explicit
+group when they need to join an inherited provider group; local models use
+`Local`. The group metadata, model specifications, and LibreChat request
+allowlist are rendered from the same effective catalog used by AgentGateway
+after client exclusions. Raw model fetching and the raw endpoint selector are
 disabled to avoid duplicate ungrouped rows. `modelSpecs.enforce` remains false
-so the Agents endpoint continues to work.
+so the Agents endpoint continues to work. A configured
+`frontendLibrechat.agentGateway.defaultModel` must match that effective catalog
+and is rendered as LibreChat's hard `default`, not `softDefault`, so every new
+chat starts with it regardless of prior user selection.
 
 RAG and Code Interpreter use private Services. Code Interpreter traffic does
 not pass through AgentGateway or the PII Engine.
