@@ -72,6 +72,13 @@ When `wait: false`, list every required HelmRelease and Gateway in
 `healthChecks`. Include enabled optional releases so their failures make the
 stage fail.
 
+For HelmRelease health checks, classify only current-generation `Ready`
+conditions as terminal: `True` is current and `False` is failed. Treat a
+missing, stale-generation, or `Unknown` `Ready` condition as in progress. This
+ends a failed health-check cycle promptly so a queued source revision can be
+processed; it does not eliminate the short event-ordering window while Flux
+controllers observe an advancing shared source.
+
 Gateway health expressions ignore stale conditions by matching
 `observedGeneration` to the current generation. Treat `InvalidCertificateRef`
 as in progress while cert-manager creates the first TLS Secret. Treat

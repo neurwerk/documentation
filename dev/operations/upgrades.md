@@ -163,3 +163,23 @@ kubectl get events -A --field-selector=type!=Normal --sort-by='.lastTimestamp'
 
 Then verify the affected applications and persistent data. Review logs without
 exposing Secret values or sensitive request content.
+
+If a Kustomization remains in a health-check cycle for an older source revision
+after a newer verified revision is available, first inspect its attempted and
+applied revisions and the referenced HelmReleases. Do not patch application
+resources or HelmRelease values around the failed reconciliation.
+
+For an explicitly authorized recovery of an already-stale in-flight cycle,
+restart only the stateless Kustomize controller, wait for it to become
+available, and request reconciliation of the affected Kustomization:
+
+```bash
+kubectl delete pod -n flux-system -l app=kustomize-controller --wait=true
+kubectl rollout status deployment/kustomize-controller -n flux-system --timeout=5m
+kubectl annotate kustomization applications -n flux-system \
+  reconcile.fluxcd.io/requestedAt="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --overwrite
+```
+
+Recheck the exact source and applied revisions, all Kustomizations and
+HelmReleases, warning events, affected workloads, and persistent data. A
+controller restart does not authorize a source change or application mutation.
