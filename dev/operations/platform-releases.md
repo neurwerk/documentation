@@ -269,7 +269,8 @@ For each draft:
 5. Merge the exact reviewed commit. This merge is the adoption authorization
    and may allow Flux to reconcile.
 
-Roll out the example client first. After an authorized deployment, inspect the
+Roll out one designated, deployed canary client first. A repository-only example
+does not provide rollout evidence. After an authorized deployment, inspect the
 source, Kustomizations, HelmReleases, warning events, and affected logs before
 advancing another client:
 
