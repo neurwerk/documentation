@@ -48,35 +48,31 @@ kustomize build --load-restrictor LoadRestrictionsNone infrastructure >/dev/null
 
 ## Destination Controls
 
-The platform supplies a reviewed OpenRouter model snapshot by default. Clients
-inherit its serving entries, pricing, AgentGateway roles, access-group grants,
-and LibreChat groups when they adopt the platform release containing that
-snapshot. A client can opt out globally or exclude exact upstream model IDs in
-`config/client.yaml`:
-
-```yaml
-openrouterCatalog:
-  enabled: false
-  excludedModels:
-    - publisher/model
-  grantToAccessGroups: false
-```
-
-All fields are optional. The defaults enable the catalog, exclude nothing, and
-grant inherited model roles to each declared AgentGateway access group.
+Each client owns its reviewed OpenRouter selection and pricing policy in
+`config/openrouter-catalog-policy.json`. The trusted-workstation sync tool
+generates `config/openrouter-catalog.yaml` and
+`infrastructure/networking/agentgateway/model-pricing.json`; do not edit those
+outputs manually. Base contains no concrete model or pricing catalog. It
+consumes the namespace-local client ConfigMaps when present and derives serving,
+policy metadata, roles, access-group grants, and LibreChat groups from the same
+selected model list.
 
 Clients configure direct, local, and other custom model destinations in
 `infrastructure/networking/agentgateway/values.yaml`. They configure MCP
-destinations in `config/client.yaml` under `mcp.servers`. Do not copy inherited
-OpenRouter models or roles into client values. The LibreChat core composition
-projects the canonical AgentGateway product values into its own namespace so
-those direct and local models use the same definitions in both products.
+destinations in `config/client.yaml` under `mcp.servers`. Direct and local model
+pricing belongs in the policy's `customPricing` field, including disjoint
+`customPricing.openrouter` entries for direct OpenRouter routes. The LibreChat core
+composition projects the canonical AgentGateway product values into its own
+namespace so those direct and local models use the same definitions in both
+products.
 
-The platform sets `piiEnabled` and `contentTracingEnabled` to `true` on
-inherited OpenRouter destinations. Clients must set both explicitly on every
-direct, local, or other custom model and MCP destination. `contentTracingEnabled: true`
-allows traces to retain model prompts and completions or MCP tool arguments and
-results.
+The chart defaults `piiEnabled` and `contentTracingEnabled` to `true` on selected
+OpenRouter destinations and routes their PII fallback through the client-owned
+`guardrails.llmPolicyEngine.localTarget`. Clients map that fallback in
+`monitorPiiEngine.policy.routing` and must set both booleans explicitly on every
+direct, local, or other custom model and MCP destination.
+`contentTracingEnabled: true` allows traces to retain model prompts and
+completions or MCP tool arguments and results.
 
 The settings are independent and apply only to the selected destination:
 
@@ -123,5 +119,5 @@ client must not generate the `auth-keycloak-active-directory-ca` ConfigMap.
 4. Keep one canonical client value; do not duplicate facts across products.
 5. Render the platform package and a representative client configuration.
 
-See [OpenRouter Catalog](../operations/openrouter-catalog.md) for snapshot
-generation and review.
+See [OpenRouter Catalog](../operations/openrouter-catalog.md) for client catalog
+generation, review, and rollout.

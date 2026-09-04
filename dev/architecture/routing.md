@@ -81,17 +81,21 @@ from the reviewed model catalog; it cannot create or override catalog policy.
 Each MCP server has an exact `/mcp/<server-id>` route. Fail-closed extProc
 enforces MCP `2025-11-25` and processes PII where enabled.
 
-- Reviewed OpenRouter models are inherited from the platform snapshot. Clients
-  may disable that catalog or exclude exact upstream IDs in
-  `client_*/config/client.yaml` under `openrouterCatalog`.
+- Reviewed OpenRouter models are selected in
+  `client_*/config/openrouter-catalog-policy.json`; the generated values and
+  complete pricing catalog are committed in the same client repository.
 - Direct, local, and custom models are configured in
-  `client_*/infrastructure/networking/agentgateway/values.yaml`.
+  `client_*/infrastructure/networking/agentgateway/values.yaml` and have matching
+  `customPricing` schedules in the client catalog policy.
+- Selected OpenRouter models use the local fallback declared in those product
+  values and mapped under `monitorPiiEngine.policy.routing` in client config.
 - MCP servers are configured in `client_*/config/client.yaml`.
 - Static MCP IDs may be dotted DNS subdomains. Workload-backed IDs must be one
   DNS label because they become Service and container names.
 
-Every destination has explicit `piiEnabled` and `contentTracingEnabled` values;
-both chart defaults are `true`.
+Every effective destination has `piiEnabled` and `contentTracingEnabled` values.
+Selected OpenRouter models receive fixed `true` values; clients set both values
+explicitly on direct, local, custom, and MCP destinations.
 
 - `piiEnabled: false` keeps strict dispatch and protocol validation but skips
   PII Engine state, analysis, and content changes.
@@ -102,10 +106,11 @@ Provider and MCP credentials come from OpenBao-backed Secrets, never ConfigMaps
 or client values. See [API Keys](../authentication/api-keys.md),
 [PII Policy Engine](pii-policy-engine.md), and [Secrets](secrets.md).
 
-The effective model catalog is capped at 512 destinations. AgentGateway derives
-the callable model resources, extProc destination metadata, and required model
-permissions from that same effective list. An OpenRouter exclusion therefore
-removes serving and authorization together.
+The effective model catalog is capped at 256 destinations, and its compact PII
+metadata is capped at 16,384 UTF-8 bytes. AgentGateway derives callable model
+resources, extProc destination metadata, and required model permissions from
+that same effective list. Removing a selected OpenRouter model therefore
+removes serving and generated authorization together.
 
 ### Private RAG Embedding Listener
 
