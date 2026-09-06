@@ -48,6 +48,9 @@ workload policy.
   complete monitoring namespace. Check the owning chart.
 - Standard NetworkPolicy cannot select an FQDN. An `ipBlock` rule limits IP
   ranges and ports, but it does not verify a hostname.
+- Selected public endpoint names use
+  [selective split-horizon DNS](split-horizon-dns.md) to reach Traefik without
+  changing their public HTTPS identity.
 
 ### Kubernetes API Access
 
@@ -69,17 +72,30 @@ Current workload-specific external allowances are:
 | Workload | Allowed destination |
 | --- | --- |
 | Dify API, worker, and plugin daemon | IPv4 TCP `443`, excluding common private, loopback, link-local, carrier-grade NAT, and multicast ranges |
-| LibreChat application | The same IPv4 TCP `443` scope for its OIDC issuer and public RGW endpoint |
+| LibreChat application | The same IPv4 TCP `443` scope for external HTTPS dependencies |
 | LibreChat RAG API | Optional use of the same IPv4 TCP `443` scope |
 | Code Interpreter package initializer | The same IPv4 TCP `443` scope for pinned downloads |
 | Keycloak Active Directory federation | Client-declared IPv4 CIDRs on TCP `636`, only when federation is enabled |
 | Keycloak SMTP | Public IPv4 destinations on the configured SMTP port, only when SMTP is enabled |
-| Keycloak initial-administrator email Job | Public IPv4 destinations on TCP `443` for TLS-verified issuer readiness, only when SMTP and the external Gateway are enabled |
 | Alertmanager SMTP | Public IPv4 destinations on the configured SMTP port, only when email is enabled |
 
 These IP rules are not FQDN allowlists. cert-manager and AgentGateway can reach
 external destinations without an egress NetworkPolicy restriction under the
 current manifests.
+
+## Internal Gateway Egress
+
+| Workload | Allowed destination |
+| --- | --- |
+| Dify API | The exact Traefik Pod on TCP `443` for its public Keycloak issuer |
+| LibreChat application | The exact Traefik Pod on TCP `443` for its public Keycloak issuer and RGW endpoint |
+| Keycloak initial-administrator email Job | The exact Traefik Pod on TCP `443` for TLS-verified issuer readiness, only when SMTP and the external Gateway are enabled |
+
+The Traefik allowance selects its namespace, Pod identity, and destination port,
+but standard NetworkPolicy cannot restrict TLS SNI or HTTP `Host`. A compromised
+allowed workload could therefore attempt to reach another route on the shared
+listener; every sensitive route must retain application-level authentication
+and authorization.
 
 ## Sensitive Paths
 
