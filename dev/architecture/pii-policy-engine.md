@@ -28,8 +28,9 @@ extProc. AgentGateway supplies the verified principal and destination policy.
 Callers cannot choose or override this metadata.
 
 Each model and MCP destination has independent `piiEnabled` and
-`contentTracingEnabled` settings. Both default to `true`, and each client must
-set both values explicitly.
+`contentTracingEnabled` settings. The platform explicitly sets both to `true`
+for inherited OpenRouter models. Clients must set both values explicitly on
+direct, local, or other custom models and MCP destinations.
 
 - A PII-disabled model still receives strict model dispatch, but extProc does
   not call PII Engine or create PII state.
@@ -278,7 +279,9 @@ version and manifest digest aligned in:
 | Client-wide policy | `client_*/config/client.yaml` |
 | PII Engine product values | `client_*/infrastructure/observability/pii-engine/values.yaml` |
 | extProc product values | `client_*/infrastructure/observability/agentgateway-extproc/values.yaml` |
-| Model destination policy | `client_*/infrastructure/networking/agentgateway/values.yaml` |
+| Inherited OpenRouter destinations | Reviewed snapshot in `base/releases/shared/openrouter-catalog.yaml` |
+| OpenRouter client opt-outs | `client_*/config/client.yaml` under `openrouterCatalog` |
+| Direct, local, and custom model destinations | `client_*/infrastructure/networking/agentgateway/values.yaml` |
 | MCP destination policy | `client_*/config/client.yaml` under `mcp.servers` |
 
 Policy and model bundle pins are non-secret. Runtime TLS keys, hash and

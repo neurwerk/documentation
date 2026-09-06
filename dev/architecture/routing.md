@@ -81,14 +81,21 @@ from the reviewed model catalog; it cannot create or override catalog policy.
 Each MCP server has an exact `/mcp/<server-id>` route. Fail-closed extProc
 enforces MCP `2025-11-25` and processes PII where enabled.
 
-- Models are configured in
-  `client_*/infrastructure/networking/agentgateway/values.yaml`.
+- Reviewed OpenRouter models are selected in
+  `client_*/config/openrouter-catalog-policy.json`; the generated values and
+  complete pricing catalog are committed in the same client repository.
+- Direct, local, and custom models are configured in
+  `client_*/infrastructure/networking/agentgateway/values.yaml` and have matching
+  `customPricing` schedules in the client catalog policy.
+- Selected OpenRouter models use the local fallback declared in those product
+  values and mapped under `monitorPiiEngine.policy.routing` in client config.
 - MCP servers are configured in `client_*/config/client.yaml`.
 - Static MCP IDs may be dotted DNS subdomains. Workload-backed IDs must be one
   DNS label because they become Service and container names.
 
-Every destination has explicit `piiEnabled` and `contentTracingEnabled` values;
-both chart defaults are `true`.
+Every effective destination has `piiEnabled` and `contentTracingEnabled` values.
+Selected OpenRouter models receive fixed `true` values; clients set both values
+explicitly on direct, local, custom, and MCP destinations.
 
 - `piiEnabled: false` keeps strict dispatch and protocol validation but skips
   PII Engine state, analysis, and content changes.
@@ -98,6 +105,12 @@ both chart defaults are `true`.
 Provider and MCP credentials come from OpenBao-backed Secrets, never ConfigMaps
 or client values. See [API Keys](../authentication/api-keys.md),
 [PII Policy Engine](pii-policy-engine.md), and [Secrets](secrets.md).
+
+The effective model catalog is capped at 256 destinations, and its compact PII
+metadata is capped at 16,384 UTF-8 bytes. AgentGateway derives callable model
+resources, extProc destination metadata, and required model permissions from
+that same effective list. Removing a selected OpenRouter model therefore
+removes serving and generated authorization together.
 
 ### Private RAG Embedding Listener
 
@@ -113,8 +126,22 @@ paths, including PII Engine and OpenSearch, use verified internal TLS.
 
 Studio API authorizes browser requests and proxies policy evaluation to PII
 Engine over mTLS. It also proxies authorized operations to Keycloak, the API-key
-bridge, Langfuse, and OpenSearch. Browsers do not call those services directly.
-Studio has no AgentGateway model-discovery or live model-test route.
+bridge, and OpenSearch. Browsers do not call those services directly. Studio has
+no AgentGateway model-discovery or live model-test route.
+
+For usage, Studio preserves its public
+`GET /api/users/{user_id}/usage` endpoint and sends principal-filtered queries to
+AgentGateway's private `POST /api/logs/analytics/summary` admin API. Studio is the
+only client of that API and uses one configurable private base URL; it does not
+query PostgreSQL directly. The admin Service and port `15000` are never exposed
+through an `HTTPRoute` or public Gateway listener.
+
+AgentGateway 1.5's admin listener has no authentication and exposes more than
+the analytics path. NetworkPolicy limits access to the Studio API workload and
+port, but cannot isolate individual HTTP paths. The resulting configuration-dump
+and shutdown-route exposure to a compromised Studio API Pod is an explicitly
+accepted development risk. Introduce admin authentication or a path-restricting
+proxy before production use or before adding API-key and budget administration.
 
 When enabled, LibreChat calls its RAG and Code Interpreter services directly
 over private HTTP. Application authentication and NetworkPolicy protect those

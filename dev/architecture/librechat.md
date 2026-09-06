@@ -58,7 +58,13 @@ admin browser
 The generated LibreChat configuration uses schema `1.3.14`. It:
 
 - exposes only the configured AgentGateway endpoint;
-- fetches the available model list from AgentGateway;
+- renders the effective reviewed model list as grouped model specifications;
+- uses that same effective list as the custom endpoint's static request-validation
+  allowlist;
+- hides the duplicate raw endpoint selector while retaining grouped model
+  selection;
+- optionally marks one client-selected model as the hard default for every new
+  chat, overriding the browser's last selection;
 - generates conversation titles after the final response;
 - maps provider reasoning through custom endpoint parameters to
   `reasoning_content` and retains reasoning in chat history;
@@ -126,10 +132,24 @@ enabled. RAG and Code Interpreter capabilities remain independently gated by
 their feature selections.
 
 Every configured destination has independent `piiEnabled` and
-`contentTracingEnabled` settings. Both chart defaults are `true`; clients should
-state both values explicitly. Requests use fail-closed external processing.
+`contentTracingEnabled` settings. The platform sets both to `true` for inherited
+OpenRouter models. Clients must set both explicitly for direct, local, and other
+custom models and MCP destinations. Requests use fail-closed external processing.
 AgentGateway removes caller credentials before forwarding requests to a model or
 MCP backend.
+
+LibreChat uses one-level collapsible model groups. Inherited models use groups
+such as `Remote-OpenRouter-OpenAI` and `Remote-OpenRouter-Anthropic`; direct
+providers use groups such as `Remote-DeepSeek`; direct models may set an explicit
+group when they need to join an inherited provider group; local models use
+`Local`. The group metadata, model specifications, and LibreChat request
+allowlist are rendered from the same effective catalog used by AgentGateway
+after client exclusions. Raw model fetching and the raw endpoint selector are
+disabled to avoid duplicate ungrouped rows. `modelSpecs.enforce` remains false
+so the Agents endpoint continues to work. A configured
+`frontendLibrechat.agentGateway.defaultModel` must match that effective catalog
+and is rendered as LibreChat's hard `default`, not `softDefault`, so every new
+chat starts with it regardless of prior user selection.
 
 RAG and Code Interpreter use private Services. Code Interpreter traffic does
 not pass through AgentGateway or the PII Engine.
@@ -186,8 +206,9 @@ Code Interpreter uses a separate retained RGW bucket, a Valkey store, and a
 retained package PVC. Its file server uses the internal RGW Service.
 
 PostgreSQL and these Rook stores share a single-node physical failure domain.
-Retention is not backup. The current release contract supports fresh installs;
-it does not declare a supported upgrade or downgrade path. See
+Retention is not backup. The latest published release, `v0.1.1`, supports
+installation only into an empty or replacement target and its exact alpha
+promotion; it declares no stable in-place upgrade or downgrade path. See
 [Shared PostgreSQL](postgresql.md#persistence-and-recovery) and
 [Rook/Ceph Storage](rook-ceph.md).
 

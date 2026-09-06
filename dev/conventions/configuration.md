@@ -48,12 +48,29 @@ kustomize build --load-restrictor LoadRestrictionsNone infrastructure >/dev/null
 
 ## Destination Controls
 
-Clients configure model destinations in
-`infrastructure/networking/agentgateway/values.yaml` and MCP destinations in
-`config/client.yaml` under `mcp.servers`.
+Each client owns its reviewed OpenRouter selection and pricing policy in
+`config/openrouter-catalog-policy.json`. The trusted-workstation sync tool
+generates `config/openrouter-catalog.yaml` and
+`infrastructure/networking/agentgateway/model-pricing.json`; do not edit those
+outputs manually. Base contains no concrete model or pricing catalog. It
+consumes the namespace-local client ConfigMaps when present and derives serving,
+policy metadata, roles, access-group grants, and LibreChat groups from the same
+selected model list.
 
-Set `piiEnabled` and `contentTracingEnabled` explicitly on every destination.
-Both default to `true` when omitted. This is not privacy-safe because
+Clients configure direct, local, and other custom model destinations in
+`infrastructure/networking/agentgateway/values.yaml`. They configure MCP
+destinations in `config/client.yaml` under `mcp.servers`. Direct and local model
+pricing belongs in the policy's `customPricing` field, including disjoint
+`customPricing.openrouter` entries for direct OpenRouter routes. The LibreChat core
+composition projects the canonical AgentGateway product values into its own
+namespace so those direct and local models use the same definitions in both
+products.
+
+The chart defaults `piiEnabled` and `contentTracingEnabled` to `true` on selected
+OpenRouter destinations and routes their PII fallback through the client-owned
+`guardrails.llmPolicyEngine.localTarget`. Clients map that fallback in
+`monitorPiiEngine.policy.routing` and must set both booleans explicitly on every
+direct, local, or other custom model and MCP destination.
 `contentTracingEnabled: true` allows traces to retain model prompts and
 completions or MCP tool arguments and results.
 
@@ -101,3 +118,6 @@ client must not generate the `auth-keycloak-active-directory-ca` ConfigMap.
 3. Update the correct ConfigMap generator and HelmRelease `valuesFrom` list.
 4. Keep one canonical client value; do not duplicate facts across products.
 5. Render the platform package and a representative client configuration.
+
+See [OpenRouter Catalog](../operations/openrouter-catalog.md) for client catalog
+generation, review, and rollout.

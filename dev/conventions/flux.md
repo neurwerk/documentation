@@ -26,6 +26,14 @@ A production platform source must:
 - set `platform.neurwerk.com/adoption-mode` to `fresh-install` or `upgrade`;
 - keep the canonical `interval`, public URL, `ref`, and `verify` fields.
 
+Use `fresh-install` only for an operator-verified empty or replacement target.
+For a stable `upgrade`, a new-format target must declare
+`compatibility.stableUpgrade: supported` and be strictly newer than the current
+exact stable tag; skipped versions are permitted after applying every crossed
+release's instructions in order. Legacy targets remain governed by their exact
+`upgradesFrom` allowlists. Exact alpha promotion remains governed by
+`upgradesFromAlphaRevisions`.
+
 Do not use a branch, SemVer range, `include`, or another field that changes the
 verified source artifact. Change the adoption mode only when changing the tag.
 
@@ -63,6 +71,13 @@ one Flux inventory owner.
 When `wait: false`, list every required HelmRelease and Gateway in
 `healthChecks`. Include enabled optional releases so their failures make the
 stage fail.
+
+For HelmRelease health checks, classify only current-generation `Ready`
+conditions as terminal: `True` is current and `False` is failed. Treat a
+missing, stale-generation, or `Unknown` `Ready` condition as in progress. This
+ends a failed health-check cycle promptly so a queued source revision can be
+processed; it does not eliminate the short event-ordering window while Flux
+controllers observe an advancing shared source.
 
 Gateway health expressions ignore stale conditions by matching
 `observedGeneration` to the current generation. Treat `InvalidCertificateRef`
