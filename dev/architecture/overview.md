@@ -92,6 +92,7 @@ namespace-local Kubernetes Secrets used at runtime.
 - [Certificates and trust](certificates.md)
 - [Routing](routing.md)
 - [Network isolation](networking.md)
+- [Canonical endpoint DNS routing](split-horizon-dns.md)
 - [Shared PostgreSQL](postgresql.md)
 - [Rook/Ceph storage](rook-ceph.md)
 - [LibreChat](librechat.md)

@@ -47,6 +47,24 @@ Interpreter remain private and have no Gateway or Ingress resources.
 See [Certificates And Trust](certificates.md#public-tls) for certificate
 ownership and approval.
 
+## Canonical Endpoint Resolution
+
+Canonical public URLs may resolve either through public DNS or, for Pod callers,
+through exact CoreDNS rewrites to the cluster Traefik Service. The hostname,
+scheme, TLS SNI, OIDC issuer identity, redirects, and S3 signatures remain
+unchanged in both cases.
+
+Clients must align DNS composition with `canonicalEndpointRouting.mode`:
+
+- `internal-traefik` is the fail-closed default and enables exact Traefik egress
+  for affected workloads;
+- `public-dns` omits that Traefik allowance and preserves public HTTPS routing.
+
+CoreDNS rewrites apply cluster-wide to matching queries; they do not select
+workloads. NetworkPolicy controls reachability. See
+[Canonical Endpoint DNS Routing](split-horizon-dns.md) for resolver ownership and
+rollout order.
+
 ## AgentGateway
 
 AgentGateway is the controlled entry point for model and MCP traffic.

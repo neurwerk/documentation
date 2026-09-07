@@ -128,6 +128,14 @@ issuer release cannot become ready until OpenBao is initialized and those
 credentials have converged. Never put provider credentials in chart defaults or
 client Git repositories.
 
+Route53 DNS-01 ownership is independent of application-name resolution.
+cert-manager creates the required ACME challenge records in the public zone even
+when application A or AAAA records are absent and clients resolve application
+names through workstation overrides, Active Directory DNS, or CoreDNS rewrites.
+Those resolver choices do not change the Gateway certificate issuer or Secret
+owner. Active Directory Certificate Services is outside the public Gateway
+certificate path.
+
 LibreChat requires distinct certificates for its main application and Admin
 Panel hostnames in `frontend-librechat`. The Rook-owned public RGW hostname in
 `infra-rook-ceph` also requires its own certificate.
