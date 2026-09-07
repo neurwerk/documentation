@@ -25,6 +25,16 @@ initial-administrator action-email Job uses Traefik-only HTTPS egress in
 
 ## Resolver Boundaries
 
+Dify web makes server-side HTTPS calls to its own canonical origin. Include that
+exact application hostname in the reviewed rewrite list for internal-routing
+clients, alongside required issuer and object-store names. Workstation resolution
+does not make these Pod-side self-calls work. Preserve the canonical URL and TLS
+verification; do not substitute a backend Service URL or a parent-zone rewrite.
+
+Check the web Pod's actual NetworkPolicy selectors before adding egress rules.
+The current platform does not isolate Dify web egress, so adding its exact DNS
+rewrite does not require a new policy. Dify API's policy is a separate boundary.
+
 These mechanisms have separate owners and scopes:
 
 | Mechanism | Scope | Responsibility |
