@@ -103,6 +103,12 @@ allowed workload could therefore attempt to reach another route on the shared
 listener; every sensitive route must retain application-level authentication
 and authorization.
 
+Dify web also calls its own canonical HTTPS origin from inside the Pod. It is
+not selected by the Dify API egress policy and currently has no isolating egress
+policy. Internal-routing clients must provide its exact canonical DNS rewrite;
+no extra web egress allowance is needed under the current policy coverage. Verify
+actual selectors again if that coverage changes.
+
 ## Sensitive Paths
 
 ### Keycloak And PostgreSQL
