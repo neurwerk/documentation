@@ -41,7 +41,7 @@ HelmRelease.
 | `base/releases/shared/` | Shared platform defaults. |
 | `base/releases/keycloak/app-defaults.yaml` | Keycloak release defaults. |
 | `client_*/config/client.yaml` | Shared client facts such as realm, hostname, OIDC settings, and AgentGateway roles. |
-| `client_*/apps/keycloak/values.yaml` | Realm display name, initial administrator, SMTP, and optional Active Directory settings. |
+| `client_*/apps/keycloak/values.yaml` | Realm display name, theme selection, name/logo branding, initial administrator, SMTP, and optional Active Directory settings. |
 | OpenBao-backed Secrets | Passwords, confidential OIDC client secrets, SMTP credentials, and Active Directory bind credentials. |
 
 The client Keycloak Kustomization generates `client-values` and
@@ -61,25 +61,49 @@ OpenBao and External Secrets provide these runtime Secrets:
 The product repository `keycloak_theme/`
 ([neurwerk/k8s_stack_keycloak_theme](https://github.com/neurwerk/k8s_stack_keycloak_theme))
 owns the native `neurwerk` login and email theme and its Dockerfile image,
-which extends Keycloak `26.7.2`. Branding is limited to CSS, a login footer,
-and an email wrapper; authentication behavior remains upstream. It does not
-customize the account, admin, or welcome themes, and the consoles remain
-unchanged.
+which extends Keycloak `26.7.2`. Shared overrides include the authentication
+layout, login and forgot-password forms, footer, and HTML email wrapper, using
+native Keycloak field and button macros. Authentication behavior remains
+upstream; account, admin, and welcome themes are unchanged. Branding does not
+change language or SMTP policy.
 
 Login theme selection is realm-scoped, not a separate login theme per user's
 privilege. Administrators can therefore see the branded login when authenticating
 through a realm that selects it, without changing the Admin Console itself.
 
-The initial image version is `0.1.0`, not yet published or pinned by any platform
-consumer. Release configuration is not evidence of successful CI or publication;
-see [Image Releases](../operations/image-releases.md#keycloak-theme-image).
+Theme image `0.1.0` and Tooling `0.6.1` are published. Platform support is merged
+on alpha `main` at `0cb8931` and an authorized alpha deployment has been verified;
+existing stable tags are unchanged.
+See [Image Releases](../operations/image-releases.md#keycloak-theme-image).
 
-Platform integration is pending and not implemented. First publish and verify
-the immutable image, then add supported theme values in `base/` and explicit
-realm `loginTheme` / `emailTheme` handling in `tooling/`. Preserve existing
-omission semantics until the future integration deliberately defines and tests
-what omitted theme settings mean; do not assume omission clears or selects a
-theme. Manual Admin Console theme selection is only for disposable previews,
+The platform contract keeps shared styles and templates fixed in the
+public `neurwerk` theme. Clients supply only a company name and logo through the
+`client-brand` child theme; no client CSS or template overrides are supported:
+
+- `authKeycloak.branding.enabled` defaults to `false`. Enabling it mounts assets
+  but does not select a realm theme.
+- The existing `authKeycloak.realmDisplayName` supplies `companyName` in both
+  generated login and email `theme.properties`, each with `parent=neurwerk`.
+- `authKeycloak.branding.logoConfigMapName` selects a client-owned ConfigMap in
+  `auth-keycloak`, containing PNG key `company-logo.png`. A read-only projected
+  volume at `/opt/keycloak/themes/client-brand` combines the properties with the
+  logo at `login/resources/img/company-logo.png`.
+- Flux excludes `.png` source files by default. Store the PNG bytes as
+  `apps/keycloak/company-logo.bin` and use generator entry
+  `company-logo.png=company-logo.bin`; the mounted file remains a PNG. This keeps
+  the logo in the source artifact without prohibited `.sourceignore` overrides.
+- `authKeycloak.loginTheme` and `authKeycloak.emailTheme` default to empty strings
+  and are omitted from realm updates when empty. Omission neither selects nor
+  clears a theme. Explicitly set both to `client-brand` to select the child;
+  that selection requires branding to be enabled.
+- Reloader watches the logo ConfigMap while preserving the Active Directory CA
+  reload annotation. A Pod-template `checksum/branding` rolls out generated
+  property changes.
+
+To remove branding, first explicitly select upstream `keycloak.v2` for login
+and `keycloak` for email while keeping the custom image and child mount available.
+Verify realm reconciliation before disabling branding and removing its assets in
+a later change. Manual Admin Console selection is only for disposable previews,
 not managed production configuration.
 
 ## Server And Issuer

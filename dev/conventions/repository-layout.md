@@ -50,11 +50,14 @@ Stage directories contain only aggregation. Keep product HelmReleases under
 ### Services, Tools, and Documentation
 
 - Application behavior and API contracts: the owning service repository.
-- Keycloak branding: `keycloak_theme/`, a product-oriented repository for CSS,
-  login footer, and email wrapper changes that retain upstream authentication.
-  Account, admin, and welcome themes are unchanged. Image publication and
-  platform adoption are pending; supported values belong in `base/` and explicit
-  realm theme handling belongs in `tooling/`, not the theme repository. See
+- Shared Keycloak branding: `keycloak_theme/` owns fixed CSS, shared authentication
+  layout, login and forgot-password form overrides, footer, and email wrapper,
+  retaining upstream authentication behavior. Account, admin, and welcome themes
+  are unchanged. Clients own only the company name in `realmDisplayName` and a
+  logo ConfigMap, not templates or styles. `base/` owns the read-only `client-brand`
+  child mount and supported values; `tooling/` owns explicit realm theme handling.
+  Theme `0.1.0` and Tooling `0.6.1` are published; coordinated platform/client
+  support is available on alpha `main` with a verified live rollout. See
   [Native Theme](../authentication/keycloak.md#native-theme) and
   [Image Releases](../operations/image-releases.md#keycloak-theme-image).
 - OpenBao bootstrap and supported provider updates:

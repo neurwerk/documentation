@@ -31,7 +31,7 @@ published, verified images may be pinned in `base/`.
 | `pii_engine/` | `pyproject.toml`, `uv.lock` | `k8s-stack-pii-engine:<version>-cpu`, `k8s-stack-pii-engine:<version>-cu124` | `charts/pii-engine/`, `charts/pii-engine-model-sync/` |
 | `agentgateway_extproc/` | `pyproject.toml`, `uv.lock` | `k8s-stack-agentgateway-extproc:<version>` | `charts/agentgateway-extproc/` |
 | `keycloak_api_key_bridge/` | `pyproject.toml`, `uv.lock` | `k8s-stack-keycloak-api-key-bridge:<version>` | `charts/keycloak-api-key-bridge/` |
-| `keycloak_theme/` | `VERSION` (initial `0.1.0`) | `k8s-stack-keycloak-theme:<version>` | None; unpublished, no platform pins or adoption |
+| `keycloak_theme/` | `VERSION` | `k8s-stack-keycloak-theme:<version>` | `charts/keycloak/server/` on alpha `main`; existing stable tags unchanged |
 | `studio/` | `apps/api/pyproject.toml`, `apps/api/uv.lock`, `apps/web/package.json` | `k8s-stack-studio-api:<version>`, `k8s-stack-studio-web:<version>` | `charts/studio/api/`, `charts/studio/web/` |
 | `tooling/` | `pyproject.toml`, `uv.lock` | `k8s-stack-tooling:<version>` | Every matching value under `base/charts/` |
 
@@ -46,23 +46,31 @@ affected chart's `version`, but keep the product's existing `appVersion`.
 
 `keycloak_theme/` (`neurwerk/k8s_stack_keycloak_theme` on GitHub) owns the native
 `neurwerk` login/email theme and a Dockerfile image extending Keycloak `26.7.2`.
-The release workflow is configured to target
-`ghcr.io/neurwerk/k8s-stack-keycloak-theme:<VERSION>`, initially `0.1.0`.
-The bootstrap commit `cd3c484` passed its
-[validation run](https://github.com/neurwerk/k8s_stack_keycloak_theme/actions/runs/34355581114):
-four static checks, the amd64 container build, and 14 desktop/mobile Chromium
-authentication checks. This is not an image publication or deployment. No
-platform consumers or pins exist yet. The upstream Keycloak base image is
-digest-pinned in the Dockerfile.
+The upstream Keycloak base image is digest-pinned in the Dockerfile. Published
+artifacts for the name/logo-only integration are:
 
-Publish and verify the immutable versioned image and digest before platform
-integration. Supported theme values in `base/` and explicit realm `loginTheme`
-and `emailTheme` handling in `tooling/` are pending, not implemented. Define and
-test omission behavior in that future integration without changing existing
-omission semantics implicitly. Normal reviewed `base/` and `tooling/` workflows
-still apply. Manual Admin Console selection is limited to disposable previews,
-not managed production adoption. See
-[Native Theme](../authentication/keycloak.md#native-theme) for branding scope.
+| Image (under `ghcr.io/neurwerk/`) | Digest | Source |
+| --- | --- | --- |
+| `k8s-stack-keycloak-theme:0.1.0` | `sha256:bc036ed63f6b1821e74a9744aa58ca177ebffb76df6d0ccd5bdf11a9a0f6441d` | `8ee87e5` |
+| `k8s-stack-tooling:0.6.1` | `sha256:60829618924ae8121817a2039faecff2dbf881debef852f84bec7c1ceb03a805` | `f15bc5b51b12db8e9c138057f78c3ac7150bc44d` |
+
+The theme [release run](https://github.com/neurwerk/k8s_stack_keycloak_theme/actions/runs/34402744015)
+built and published the image. The released redesign removed the old 14 browser
+tests; their bootstrap results are not validation of this release. Release CI
+verified the build, while a separate local disposable check confirmed actual
+name/logo inheritance on login, password reset, and email. No new test framework
+was added. Tooling [v0.6.1](https://github.com/neurwerk/k8s_stack_tooling/releases/tag/v0.6.1)
+adds explicit realm theme handling with omitted settings left unchanged.
+
+Base commit `0cb8931` pins these images and bumps all 11 Tooling-consuming chart
+versions without changing their product `appVersion`. The authorized alpha
+rollout verified signed source reconciliation, healthy Helm releases, live
+desktop/mobile login and reset pages, the selected login/email themes, and
+unchanged realm user/client/role counts. Production reset emails were not sent;
+email rendering and reset completion were checked in the disposable preview.
+Existing stable tags are unchanged. See
+[Native Theme](../authentication/keycloak.md#native-theme) for the fixed shared
+templates, child-theme values, and two-step removal contract.
 
 ### Publish A Service Image
 
