@@ -146,23 +146,26 @@ automatically delete every previously created role or group.
 
 See [OIDC Clients](oidc.md) for client registration and token validation.
 
-These group and grant rules describe the coordinated base/client contract, not
-an assertion that a published tag already contains the changes. The template
-enforces the restrictions above; fresh bootstrap and live reconciliation have
-not been verified here.
+These group and grant rules are published in `v0.3.3`. Its tagged migration
+requires aligned client values and group references before cleanup. Publication
+does not establish live adoption; release verification covers rendered/static
+tests and contract checks, not live installation, migration, cleanup, or recovery.
 
 ### Existing-Realm Cleanup
 
 For an unused development client, use a one-time manual cleanup after the base
 and client configuration is aligned; no membership migration tooling is needed.
+Fresh installations into verified empty or replacement environments use the
+canonical defaults without group cleanup. Preserve intended explicit model/MCP
+grants and administrator memberships when aligning existing clients.
 
 1. Confirm an independent administrative login that does not rely on a group
    being removed. Align default groups, initial-admin memberships, directory
    allowlists, and explicit grants with the canonical set, then verify successful
    reconciliation before deleting anything.
 2. In the intended realm's Keycloak Admin Console, inspect the exact superseded
-   groups and their memberships and role mappings. Delete only those obsolete
-   groups after confirming their access is no longer needed. Do not delete the
+   unprefixed groups and their memberships and role mappings. Delete only those
+   obsolete groups after confirming their access is no longer needed. Do not delete the
    realm, `/access`, canonical groups, unrelated groups, users, application realm
    roles, composites, or OIDC clients.
 3. Verify the canonical groups, intended administrator membership, and effective

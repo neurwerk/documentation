@@ -19,10 +19,12 @@ forward transition between exact stable SemVer tags, including skipped
 versions. Alpha promotion remains limited to exact commits listed by the target
 release.
 
-The latest published release, `v0.3.2`, declares `stableUpgrade: supported`, no
+The latest published release, `v0.3.3`, declares `stableUpgrade: supported`, no
 alpha source revisions, unsupported downgrades, and forward-fix recovery. Its
-migration document refers to the tagged `CHANGELOG.md` for breaking changes and
-required actions. Do not rewrite older published contracts to match it.
+migration document requires canonical access-group alignment and describes
+targeted cleanup for unused development realms after configuration is aligned; see
+[Current Support](upgrades.md#current-support). Publication does not establish
+live client adoption. Do not rewrite older published contracts to match it.
 
 Every platform release supports installation into a verified empty or
 replacement environment; fresh installation is not a release-specific

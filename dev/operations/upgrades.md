@@ -9,21 +9,33 @@ Kubernetes control-plane changes.
 
 ## Current Support
 
-The latest published platform release is `v0.3.2` (2026-09-08).
+The latest published platform release is `v0.3.3` (2026-09-09).
 
 | Target | Contract | Stable upgrade sources | Alpha promotion | Downgrade |
 | --- | --- | --- | --- | --- |
 | `v0.1.0` | Legacy allowlist | None | None | Unsupported |
 | `v0.1.1` | Legacy allowlist | None | Exact revision declared by `v0.1.1` | Unsupported |
 | `v0.3.2` | `stableUpgrade: supported` | Any strictly lower exact stable SemVer tag, subject to migration review | None | Unsupported |
+| `v0.3.3` | `stableUpgrade: supported` | Any strictly lower exact stable SemVer tag, subject to migration review | None | Unsupported |
 
 The published contracts are immutable. The historical `v0.1.0` and `v0.1.1`
 targets permit no in-place stable upgrade; `v0.1.1` permits promotion only from
-its exact declared alpha revision. The `v0.3.2` manifest and migration document
+its exact declared alpha revision. The `v0.3.3` manifest and migration document
 declare stable upgrades supported, no alpha source revisions, and forward-fix
-recovery. Its migration document directs operators to `CHANGELOG.md` for
-breaking changes and required actions. This is declared support, not evidence
-that a particular live transition has been tested.
+recovery. Its tagged `release/migrations/v0.3.3.md` requires removing platform
+catalog overrides, aligning canonical group references and intended memberships,
+and keeping `grantToAccessGroups: false` with explicit model/MCP grants. Render
+aligned client values before adoption, coordinate the separate client and
+platform source changes, and verify both revisions before cleanup.
+
+For an unused development realm, manually delete only superseded unprefixed
+groups after confirming independent administrative access and intended
+permissions; preserve users, application roles, composites, and unrelated groups.
+Follow [Existing-Realm Cleanup](../authentication/keycloak.md#existing-realm-cleanup).
+Fresh installations into verified empty or replacement environments need no
+group cleanup. Prerequisites, runtime images, package exclusions, and exceptions
+are unchanged from `v0.3.2`; crossed-release actions still apply. Release checks
+do not establish live adoption, migration, cleanup, or recovery evidence.
 
 The selected target tag is authoritative. Check:
 
@@ -32,7 +44,7 @@ The selected target tag is authoritative. Check:
   recovery limits.
 
 The files must agree. Published `v0.1.0` and `v0.1.1` use immutable legacy
-`upgradesFrom` allowlists. The published `v0.3.2` contract uses `stableUpgrade`:
+`upgradesFrom` allowlists. The published `v0.3.3` contract uses `stableUpgrade`:
 
 - `supported` is the default and permits an upgrade from any exact stable tag
   with a strictly lower SemVer, including a skipped-version upgrade;
