@@ -181,6 +181,18 @@ custom models and MCP destinations. Requests use fail-closed external processing
 AgentGateway removes caller credentials before forwarding requests to a model or
 MCP backend.
 
+Context7 client configuration uses the generated AgentGateway
+`/mcp/context7` route, not a direct LibreChat upstream URL. AgentGateway connects
+to `mcp.context7.com:443/mcp` using StreamableHTTP and verified public TLS, with
+no upstream API key or `upstreamAuth`. LibreChat still uses Keycloak OAuth;
+callers need `llm:invoke` and `mcp:context7:invoke`, explicitly granted to the
+existing MCP access group. Both `piiEnabled` and `contentTracingEnabled` are
+`true`, matching Brave: tool arguments/results pass through the client's PII
+policy and may be retained in traces. Anonymous upstream quotas apply. Dify's
+configuration and service-client grants are unchanged. Client adoption requires
+the AgentGateway chart's static MCP `tls` support (chart `1.2.3` or later) before
+enabling these values; local configuration alone does not establish deployment.
+
 LibreChat uses one-level collapsible model groups. Inherited models use groups
 such as `Remote-OpenRouter-OpenAI` and `Remote-OpenRouter-Anthropic`; direct
 providers use groups such as `Remote-DeepSeek`; direct models may set an explicit

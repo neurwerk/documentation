@@ -108,6 +108,12 @@ enforces MCP `2025-11-25` and processes PII where enabled.
 - Selected OpenRouter models use the local fallback declared in those product
   values and mapped under `monitorPiiEngine.policy.routing` in client config.
 - MCP servers are configured in `client_*/config/client.yaml`.
+- Static MCP hosts must be listed in `mcp.approvedHosts`. Set `tls: true` on a
+  server entry and an explicit port (normally `443`) for public upstream TLS.
+  AgentGateway verifies the system-trusted certificate chain and the exact host
+  as a certificate SAN, and uses that host as SNI. Omitted or false `tls` retains
+  HTTP; workload entries cannot enable this option. Verification bypass and
+  custom CA settings are not exposed by this value.
 - Static MCP IDs may be dotted DNS subdomains. Workload-backed IDs must be one
   DNS label because they become Service and container names.
 
