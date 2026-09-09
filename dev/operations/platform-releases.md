@@ -105,8 +105,11 @@ Publish and verify required images through the
 4. The workflow verifies the signed predecessor and opens a draft branch named
    `release/vX.Y.Z`. It changes only the five release evidence files listed
    above.
-5. Review `release/config.yaml`. Replace every generated `TODO` in the changelog
-   and migration document with release-specific evidence.
+5. Review `release/config.yaml`, the compact migration declarations, and the
+   authored release entry in `CHANGELOG.md`. Preparation preserves an existing
+   release entry or uses the `Unreleased` text, falling back to the reviewed
+   summary when empty. Add any required operator actions; empty release notes
+   and unresolved `TODO` markers fail validation.
 6. Regenerate the manifest and run all release checks.
 7. Resolve review comments and merge the release pull request to `main` through
    the normal reviewed workflow.
@@ -118,21 +121,15 @@ token allows the draft pull request to run normal `Required CI`.
 
 ### Migration Document
 
-When preparing a new migration document, use these level-two headings:
+The current successor scaffold and validator use exactly one of each required
+level-two section:
 
 - `Support`
-- `Prerequisites`
-- `Client Actions`
 - `Breaking Changes`
-- `Stateful And API Effects`
-- `Pre-Deployment Checks`
-- `Post-Deployment Checks`
 - `Recovery`
-- `Exclusions`
 
-Published documents remain authoritative and immutable: `v0.3.2` uses a shorter
-document with `Support`, `Breaking Changes`, and `Recovery`, and refers to its
-tagged changelog for actions. Do not assume it contains every heading above.
+No additional boilerplate headings are mandatory. Published documents remain
+authoritative and immutable; `v0.3.2` already uses this compact format.
 
 For every new-format release, the `Support` section uses exactly one of these
 lines:
@@ -143,16 +140,24 @@ lines:
 ```
 
 It also declares exact full alpha source commits and unsupported downgrade
-behavior. The mandatory `Breaking Changes` section contains the instructions
-operators must apply or `None.` when there are none. A migration document
-describes a checkpoint only when that release needs one; checkpoints are not a
+behavior. The `Breaking Changes` section must be nonempty. The scaffold uses:
+
+```text
+See the release notes in CHANGELOG.md for breaking changes and required actions.
+```
+
+Keep the actual changes and required operator actions in the authored release
+entry in `CHANGELOG.md`; concise reviewed bullets are sufficient. Add specific
+migration details only when needed, not empty sections or generated TODO lists.
+A checkpoint is documented only when that release needs one; it is not a
 machine-readable compatibility field.
 
 The immutable `v0.1.0` and `v0.1.1` migration documents retain their legacy
 exact stable-source declarations. Write `None.` when there are no supported
 alpha commits or legacy stable sources.
 
-The `Recovery` section uses one classification:
+The `Recovery` section contains a `Recovery classification: <label>.`
+declaration using one classification:
 
 - `Configuration revert`
 - `Forward fix`
