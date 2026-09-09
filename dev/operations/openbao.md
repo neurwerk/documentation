@@ -4,14 +4,13 @@
 handles bootstrap, catalog reconciliation, status checks, recovery verification,
 and supported provider credential updates. It is not a Kubernetes Job.
 
-The current platform release contract requires `stack-setup` `0.2.10` from
-tooling commit `fbf91a133e755e5f5b3a79e0e73c2506fc09021f`.
+The published `v0.3.3` platform release contract requires `stack-setup` `0.2.11`
+from tooling commit `5d1a33a938e22e9034581aebecf33485adc88a29`.
 
 The AgentGateway usage migration requires reconciliation schema `4`. Its target
 platform release must pin `openbao-stack-setup` `0.2.11` from tooling commit
 `5d1a33a938e22e9034581aebecf33485adc88a29`. Do not substitute a branch or
-moving reference. The existing requirement above remains authoritative for the
-currently published platform release.
+moving reference. This matches the currently published platform prerequisite.
 
 ## Requirements
 

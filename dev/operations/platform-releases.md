@@ -26,6 +26,11 @@ targeted cleanup for unused development realms after configuration is aligned; s
 [Current Support](upgrades.md#current-support). Publication does not establish
 live client adoption. Do not rewrite older published contracts to match it.
 
+`v0.3.4` preparation is merged in Base PR #95 at
+`5a84fb47adf8551994296228ee8676a58ccb5667`: MCP TLS, LibreChat agent permissions,
+and Studio `0.8.0`. See `release/migrations/v0.3.4.md`. Signing and publication
+remain operator-run; the latest published release is still `v0.3.3`.
+
 Every platform release supports installation into a verified empty or
 replacement environment; fresh installation is not a release-specific
 compatibility field. Downgrades are unsupported.

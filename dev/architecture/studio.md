@@ -25,8 +25,10 @@ Each day contains `date` and `models`; each model entry contains nullable
 `model`, `requests`, `total_tokens`, and `cost_usd`. Empty days remain present
 with an empty model list. Null models are displayed as "Unknown model".
 
-`K8S_STUDIO_USAGE_TIMEZONE` is an API environment setting, defaulting to
-`Europe/Berlin`. Local-midnight boundaries are converted to half-open UTC
+`K8S_STUDIO_USAGE_TIMEZONE` is an API environment setting with application default
+`Europe/Berlin`. Base's existing chart default `frontendStudio.api.usageTimezone`
+remains `UTC` and overrides the application default unless explicitly configured.
+Local-midnight boundaries are converted to half-open UTC
 ranges, respecting 23-hour and 25-hour daylight-saving days. Today is capped
 at the captured current time. Consecutive equal-duration historical days use
 one gateway query; transition days and partial today are queried separately.
