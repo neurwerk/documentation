@@ -181,29 +181,64 @@ compatibility, provenance, and generated manifest drift.
 ## Sign and Publish
 
 Merging the release pull request does not authorize a tag or publication. After
-explicit release authorization, verify that `main` is clean, the release checks
-pass, and the SSH agent holds the approved signing key. Then run from `base/`:
+explicit release authorization, use the supported trusted-workstation CLI from
+`tooling/cli_tools/platform_release/`, not from `base/`. Select the trusted
+primary Base checkout with `--base-repo`; the CLI prepares its own clean linked
+release checkout without switching or cleaning the original checkout.
 
 ```bash
-test "$(git branch --show-current)" = main
-test -z "$(git status --short)"
-make release-check TAG="v$(cat VERSION)"
-git -c gpg.format=ssh \
-  -c user.signingkey="$RELEASE_SIGNING_PUBLIC_KEY_FILE" \
-  tag -s -a "v$(cat VERSION)" -m "Neurwerk Platform v$(cat VERSION)"
-git push origin "v$(cat VERSION)"
+mise exec -- uv run --frozen platform-release --base-repo /path/to/trusted/base \
+  publish --tag vX.Y.Z
 ```
 
-Do not pass the private key through a command argument, environment variable,
-CI secret, or repository file.
+The CLI asks permission to fetch and prepare the isolated checkout. It requires
+the exact merged release PR commit at the remote default-branch tip, successful
+required CI, and passing full local checks. Signing uses only ssh-agent and the
+public file `~/.ssh/neurwerk_base_release_ed25519.pub`; both must match the
+approved fingerprint above. Stop if the approved identity is unavailable.
+Never read or pass a private key through arguments, environment variables, CI
+secrets, or repository files.
 
-Pushing the tag starts two workflows:
+After preflight, review and type the exact displayed confirmation:
+
+```text
+PUBLISH OWNER/REPOSITORY vX.Y.Z FULL_RELEASE_MERGE_COMMIT
+```
+
+This authorizes signing, staging, and the publication chain together. The CLI
+creates and verifies the local signed annotated tag, pushes only its object to
+`refs/tags/release-staging/vX.Y.Z`, and dispatches `Create Platform Release Tag`
+with the exact tag, tag-object SHA, and target commit. The protected workflow
+creates the final tag; do not push it directly or create a GitHub Release by hand.
+
+The CLI then waits for the exact final object and correlated workflow evidence:
 
 1. `Verify Platform Release` verifies the signer, default-branch ancestry,
    release contract, full repository checks, and tag/version consistency.
 2. `Release Platform` repeats the trust and provenance checks, verifies the
    signed predecessor, builds the release notes, and publishes the GitHub
    Release through the `platform-release` environment.
+
+Protected environment approvals remain manual. The CLI verifies the non-draft
+stable GitHub Release and correlates publication through the
+`published-platform-release` identity artifact, not merely a successful run.
+
+If waiting times out or publication is interrupted, inspect the same exact tag
+from the same CLI directory and primary Base path:
+
+```bash
+mise exec -- uv run --frozen platform-release --base-repo /path/to/trusted/base \
+  status --tag vX.Y.Z
+mise exec -- uv run --frozen platform-release --base-repo /path/to/trusted/base \
+  continue --tag vX.Y.Z
+```
+
+`status` inspects without waiting. `continue` waits/rechecks publication only when
+the final ref matches the locally verified signed tag; it never redispatches.
+Local-only or staged-only states require inspection and separately authorized
+recovery using the CLI README's partial-operation guidance. Do not rerun
+`publish` automatically, overwrite refs, or bypass the protected workflow.
+Missing or expired identity artifacts fail closed rather than proving success.
 
 If release evidence is defective, prepare a new version. Do not repair it by
 moving the existing tag.
