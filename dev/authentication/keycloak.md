@@ -37,6 +37,7 @@ HelmRelease.
 | Source | Content |
 | --- | --- |
 | `base/charts/keycloak/**/values.yaml` | Chart defaults and supported value shapes. |
+| `base/charts/keycloak/realm-config/realm-roles/files/standard-access.yaml` | Immutable platform catalog of standard groups, realm roles, composites, and application mappings; not a values override. |
 | `base/releases/shared/` | Shared platform defaults. |
 | `base/releases/keycloak/app-defaults.yaml` | Keycloak release defaults. |
 | `client_*/config/client.yaml` | Shared client facts such as realm, hostname, OIDC settings, and AgentGateway roles. |
@@ -80,10 +81,58 @@ Human access is assigned through groups below `/access`. The realm-role Job maps
 those groups to realm roles and, when configured, AgentGateway client roles.
 Do not assign stack roles directly to human users.
 
-The platform defines the standard application and administrator groups. Client
-values may add approved federation groups and AgentGateway grants. Every
-AgentGateway grant must exist in `authKeycloak.agentgatewayClientRoles` and match
-one of these forms:
+The platform defines these 13 canonical groups as flat children of `/access`:
+
+- `neurwerk-api-key-admins`
+- `neurwerk-dify-admins`
+- `neurwerk-dify-users`
+- `neurwerk-keycloak-admins`
+- `neurwerk-langfuse-admins`
+- `neurwerk-librechat-admins`
+- `neurwerk-librechat-users`
+- `neurwerk-opensearch-admins`
+- `neurwerk-pii-admins`
+- `neurwerk-platform-admins`
+- `neurwerk-studio-users`
+- `neurwerk-llm-all-users`
+- `neurwerk-mcp-all-users`
+
+The `neurwerk-` prefix is intentional: it is the supported Active Directory
+namespace and satisfies federation prefix validation. Existing application
+realm roles and composites are unchanged. Clients inherit the platform group
+definitions and application mappings rather than copying them. Clients own
+local or directory memberships, directory settings, and explicit model and MCP
+grants.
+
+The chart loads the shared catalog from `files/standard-access.yaml`, not from
+overridable values. Rendering rejects any supplied `authKeycloak.accessGroups`,
+`authKeycloak.realmRoles`, or `authKeycloak.realmRoleComposites` key, even an empty
+one. Omit those keys from client values.
+
+Application and administrator groups do not implicitly grant resource access.
+`neurwerk-llm-all-users` receives only explicitly granted model permissions;
+`neurwerk-mcp-all-users` receives only explicitly granted MCP permissions. The
+word `all` is not a wildcard for catalog additions, and MCP grants never generate
+model grants. Both require `llm:invoke` alongside each resource permission.
+The global safe default and both client catalog policies use
+`grantToAccessGroups: false`; the template rejects
+`openrouterCatalog.grantToAccessGroups: true` rather than expanding model roles.
+
+Configure explicit grants under `authKeycloak.agentgatewayAccessGroups`, keyed
+by full group path. Only `/access/neurwerk-llm-all-users` and
+`/access/neurwerk-mcp-all-users` are accepted. Rendering rejects grants to any
+other group, MCP roles in the LLM group, and model roles in the MCP group. Each
+grant must be a list of roles from the effective catalog.
+
+Before overlaying those explicit grants, the template sets
+`clientRoles.agentgateway: []` on all 13 standard groups. These explicit empty
+mappings clear stale managed AgentGateway grants during reconciliation; omitted
+mappings would not. This does not delete obsolete groups or remove user
+memberships, and it does not revoke unrelated direct user or service grants.
+
+Every AgentGateway grant must exist in the effective client-role catalog
+(including selected OpenRouter model roles and explicit
+`authKeycloak.agentgatewayClientRoles`) and match one of these forms:
 
 ```text
 llm:invoke
@@ -97,10 +146,42 @@ automatically delete every previously created role or group.
 
 See [OIDC Clients](oidc.md) for client registration and token validation.
 
+These group and grant rules describe the coordinated base/client contract, not
+an assertion that a published tag already contains the changes. The template
+enforces the restrictions above; fresh bootstrap and live reconciliation have
+not been verified here.
+
+### Existing-Realm Cleanup
+
+For an unused development client, use a one-time manual cleanup after the base
+and client configuration is aligned; no membership migration tooling is needed.
+
+1. Confirm an independent administrative login that does not rely on a group
+   being removed. Align default groups, initial-admin memberships, directory
+   allowlists, and explicit grants with the canonical set, then verify successful
+   reconciliation before deleting anything.
+2. In the intended realm's Keycloak Admin Console, inspect the exact superseded
+   groups and their memberships and role mappings. Delete only those obsolete
+   groups after confirming their access is no longer needed. Do not delete the
+   realm, `/access`, canonical groups, unrelated groups, users, application realm
+   roles, composites, or OIDC clients.
+3. Verify the canonical groups, intended administrator membership, and effective
+   application and resource permissions. Confirm unrelated identities and
+   configuration remain intact.
+
+Removing YAML does not delete existing groups. Existing-user provisioning adds
+missing memberships but does not remove old ones. Group deletion removes that
+group's memberships and inherited access; it does not delete the users. If the
+client has active users whose access must be preserved, stop and review their
+intended memberships rather than treating them as unused development state.
+
 ## Initial Administrator
 
 Configure the initial administrator in `client_*/apps/keycloak/values.yaml`.
-The Job looks up the user by username.
+The Job looks up the user by username. Fresh-bootstrap defaults and configured
+initial-admin memberships must use the canonical groups above, including
+`/access/neurwerk-platform-admins` for platform administration. Administrative
+membership alone must not supply model or MCP grants.
 
 For a new user, it:
 

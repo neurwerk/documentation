@@ -12,12 +12,18 @@ Platform tags use strict SemVer in the form `vX.Y.Z`. Each new version must be
 newer than the previous signed release.
 
 Compatibility is explicit. Published `v0.1.0` and `v0.1.1` retain their
-immutable legacy stable-source allowlists. Beginning with a future release,
-`compatibility.stableUpgrade` is explicitly `supported` or
+immutable legacy stable-source allowlists. Current-format releases use
+`compatibility.stableUpgrade`, explicitly `supported` or
 `fresh-install-only`. `supported` is the default and permits any strictly
 forward transition between exact stable SemVer tags, including skipped
 versions. Alpha promotion remains limited to exact commits listed by the target
 release.
+
+The latest published release, `v0.3.2`, declares `stableUpgrade: supported`, no
+alpha source revisions, unsupported downgrades, and forward-fix recovery. Its
+migration document refers to the tagged `CHANGELOG.md` for breaking changes and
+required actions. Do not rewrite older published contracts to match it.
+
 Every platform release supports installation into a verified empty or
 replacement environment; fresh installation is not a release-specific
 compatibility field. Downgrades are unsupported.
@@ -112,7 +118,7 @@ token allows the draft pull request to run normal `Required CI`.
 
 ### Migration Document
 
-Every new-format migration document uses these level-two headings:
+When preparing a new migration document, use these level-two headings:
 
 - `Support`
 - `Prerequisites`
@@ -123,6 +129,10 @@ Every new-format migration document uses these level-two headings:
 - `Post-Deployment Checks`
 - `Recovery`
 - `Exclusions`
+
+Published documents remain authoritative and immutable: `v0.3.2` uses a shorter
+document with `Support`, `Breaking Changes`, and `Recovery`, and refers to its
+tagged changelog for actions. Do not assume it contains every heading above.
 
 For every new-format release, the `Support` section uses exactly one of these
 lines:

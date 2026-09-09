@@ -54,8 +54,24 @@ generates `config/openrouter-catalog.yaml` and
 `infrastructure/networking/agentgateway/model-pricing.json`; do not edit those
 outputs manually. Base contains no concrete model or pricing catalog. It
 consumes the namespace-local client ConfigMaps when present and derives serving,
-policy metadata, roles, access-group grants, and LibreChat groups from the same
-selected model list.
+policy metadata, role definitions, and LibreChat groups from the same selected
+model list. Selection does not authorize callers. Keep the global safe default
+and both client policies at `grantToAccessGroups: false`; rendering rejects
+`true`. Explicit `authKeycloak.agentgatewayAccessGroups` grants accept only
+`/access/neurwerk-llm-all-users` for model roles and
+`/access/neurwerk-mcp-all-users` for MCP roles, with `llm:invoke` as required.
+Rendering rejects other groups and cross-resource grants.
+Application or administrator membership grants neither, and MCP access must not
+generate model access.
+
+Clients inherit the platform's canonical `/access` groups and application role
+mappings from the immutable chart file
+`base/charts/keycloak/realm-config/realm-roles/files/standard-access.yaml`.
+Rendering rejects `authKeycloak.accessGroups`, `authKeycloak.realmRoles`, and
+`authKeycloak.realmRoleComposites` overrides; omit those keys entirely.
+Memberships, directory settings, and explicit resource grants remain
+client-owned. See
+[Keycloak](../authentication/keycloak.md#roles-and-access-groups).
 
 Clients configure direct, local, and other custom model destinations in
 `infrastructure/networking/agentgateway/values.yaml`. They configure MCP

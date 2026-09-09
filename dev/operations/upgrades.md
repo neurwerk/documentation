@@ -9,16 +9,21 @@ Kubernetes control-plane changes.
 
 ## Current Support
 
-The latest published platform release is `v0.1.1`.
+The latest published platform release is `v0.3.2` (2026-09-08).
 
 | Target | Contract | Stable upgrade sources | Alpha promotion | Downgrade |
 | --- | --- | --- | --- | --- |
 | `v0.1.0` | Legacy allowlist | None | None | Unsupported |
 | `v0.1.1` | Legacy allowlist | None | Exact revision declared by `v0.1.1` | Unsupported |
+| `v0.3.2` | `stableUpgrade: supported` | Any strictly lower exact stable SemVer tag, subject to migration review | None | Unsupported |
 
-The published contracts are immutable. Neither permits an in-place upgrade from
-a stable release. `v0.1.1` permits promotion only from its exact declared alpha
-revision.
+The published contracts are immutable. The historical `v0.1.0` and `v0.1.1`
+targets permit no in-place stable upgrade; `v0.1.1` permits promotion only from
+its exact declared alpha revision. The `v0.3.2` manifest and migration document
+declare stable upgrades supported, no alpha source revisions, and forward-fix
+recovery. Its migration document directs operators to `CHANGELOG.md` for
+breaking changes and required actions. This is declared support, not evidence
+that a particular live transition has been tested.
 
 The selected target tag is authoritative. Check:
 
@@ -27,8 +32,7 @@ The selected target tag is authoritative. Check:
   recovery limits.
 
 The files must agree. Published `v0.1.0` and `v0.1.1` use immutable legacy
-`upgradesFrom` allowlists. Beginning with a future release, compatibility uses
-`stableUpgrade`:
+`upgradesFrom` allowlists. The published `v0.3.2` contract uses `stableUpgrade`:
 
 - `supported` is the default and permits an upgrade from any exact stable tag
   with a strictly lower SemVer, including a skipped-version upgrade;

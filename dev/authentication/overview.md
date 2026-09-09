@@ -26,14 +26,19 @@ When Microsoft Active Directory federation is enabled:
 - Keycloak accesses Active Directory through read-only LDAPS with `NO_CACHE`.
 - Only direct membership in approved `neurwerk-` groups is synchronized under
   Keycloak's `/access` group.
-- Git-reviewed client configuration maps those groups to Keycloak roles.
+- Platform defaults define the canonical groups and application role mappings;
+  clients inherit them and own memberships, directory settings, and explicit
+  model and MCP grants.
 - Authentication fails closed when Keycloak cannot verify the current Active
   Directory state.
 - A local Keycloak break-glass administrator remains available for recovery.
 
 Application roles and AgentGateway permissions are separate. Membership in a
 broad LLM access group does not grant access to Studio, LibreChat, Dify, or
-Keycloak administration.
+Keycloak administration. Conversely, application or administrator membership
+does not implicitly grant model or MCP access. MCP access never automatically
+grants model access. The canonical set contains 13 platform-defined groups; see
+[Roles And Access Groups](keycloak.md#roles-and-access-groups).
 
 ## Authorization
 
@@ -76,12 +81,18 @@ Model requests require both `llm:invoke` and the matching
 `model:<model-id>:invoke` permission. MCP requests require `llm:invoke` and the
 matching `mcp:<server-id>:invoke` permission.
 
-The platform chart derives roles from the client's selected OpenRouter models.
-The client policy decides whether those roles are added to every declared
-AgentGateway access group. Clients continue to declare broad `llm:invoke`, MCP
-roles, and roles for their direct, local, or custom model destinations. Dify and
-managed API-key grants remain explicit subsets and are validated against the
-effective role catalog.
+The platform chart derives role definitions from the client's selected
+OpenRouter models; selection alone is not an access grant. The global safe
+default and both client policies use `grantToAccessGroups: false`; the template
+rejects `true`. Clients explicitly grant model roles only to
+`/access/neurwerk-llm-all-users` and MCP roles only to
+`/access/neurwerk-mcp-all-users` through
+`authKeycloak.agentgatewayAccessGroups`, together with the required `llm:invoke`
+permission. Other groups and cross-resource grants are rejected. The
+`all` groups cover only explicitly granted resources, not future catalog
+additions. Clients also declare roles for direct, local, or custom model
+destinations. Dify and managed API-key grants remain explicit subsets and are
+validated against the effective role catalog.
 
 API keys contain an immutable permission grant. During validation, the API-key
 bridge intersects that grant with the enabled principal's current AgentGateway

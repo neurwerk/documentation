@@ -38,11 +38,12 @@ The platform `GitRepository`:
 
 `fresh-install` requires an operator-verified empty or replacement target. A
 stable `upgrade` must satisfy the selected release's compatibility contract:
-future releases use `stableUpgrade`, while immutable legacy releases retain
-their exact `upgradesFrom` allowlists. Skipping stable versions is permitted
-when a strictly newer new-format target declares support, but operators must
-apply every crossed release's migration and breaking-change instructions in
-ascending order. Exact alpha promotion remains a separate allowlist contract.
+current-format releases, including `v0.3.2`, use `stableUpgrade`, while immutable
+legacy releases retain their exact `upgradesFrom` allowlists. Skipping stable
+versions is permitted when a strictly newer new-format target declares support,
+but operators must apply every crossed release's migration and breaking-change
+instructions in ascending order. Exact alpha promotion remains a separate
+allowlist contract.
 
 Provision the private client Git credential and platform release trust Secret
 out of band. Never commit either Secret.

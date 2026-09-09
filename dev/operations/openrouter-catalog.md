@@ -32,8 +32,9 @@ The policy contains five required fields:
 
 - `selectedModels`: unique exact upstream model IDs. New upstream models are not
   selected automatically.
-- `grantToAccessGroups`: whether selected model roles are added to each declared
-  AgentGateway access group.
+- `grantToAccessGroups`: must be `false`, the global safe default and policy in
+  both clients. The platform template rejects `true`; selected models require
+  explicit grants to `/access/neurwerk-llm-all-users`.
 - `publicNameOverrides`: reviewed serving names that must survive an upstream
   display-name change.
 - `negotiatedPricing`: complete replacement pricing for selected OpenRouter
@@ -47,6 +48,18 @@ collisions, malformed pricing, and unknown fields. It excludes temporary,
 batch, expired, non-text, parameterless, and routing pseudo-models from the
 selection list. Pricing is emitted in USD per million tokens with at most six
 fractional places.
+
+Model selection creates serving entries and role definitions, not caller
+authorization. Review explicit `authKeycloak.agentgatewayAccessGroups` grants
+separately. The template accepts model grants only for
+`/access/neurwerk-llm-all-users` and MCP grants only for
+`/access/neurwerk-mcp-all-users`, alongside `llm:invoke`. It rejects other groups,
+undeclared roles, and cross-resource grants. `all` does not automatically include
+newly selected models; MCP grants never generate model grants. Application and
+administrator groups do not receive resource grants. The template emits empty
+AgentGateway mappings for all 13 canonical groups before overlaying explicit
+grants, clearing stale managed grants on reconciliation. This implementation
+contract does not imply that every published tag includes it.
 
 Selected models default to PII processing, content tracing, and local PII
 rerouting. Each participating client must configure the llama.cpp endpoint and
@@ -87,11 +100,11 @@ uv run --frozen openrouter-catalog-sync \
   --check
 ```
 
-Review selected additions and removals, serving names, groups, access grants,
-pricing, Dify references, and direct model coverage. The CLI permits at most 256
-selected OpenRouter models, limits each generated file to 900,000 bytes, and
-enforces the 16,384-byte compact PII metadata limit. Base separately rejects
-more than 256 effective model destinations or compact PII destination metadata
+Review selected additions and removals, serving names, groups, explicit model
+and MCP grants, pricing, Dify references, and direct model coverage. The CLI
+permits at most 256 selected OpenRouter models, limits each generated file to
+900,000 bytes, and enforces the 16,384-byte compact PII metadata limit. Base
+separately rejects more than 256 effective model destinations or compact PII destination metadata
 larger than 16,384 UTF-8 bytes. Keycloak's composed access-group JSON has a
 120,000-byte limit, so broad grants can impose a lower practical model limit.
 
@@ -127,9 +140,11 @@ reconciled Git sources:
    reconciliation and request verification.
 
 Keycloak client-role definitions are additive. Removing a selected model stops
-serving and generated group grants, but it does not delete a role directly
+serving it; update any explicit group and service grants that reference it in
+the same reviewed change. Removing catalog YAML does not delete a role directly
 assigned to a user or service account. Audit those assignments before reusing a
-public model name.
+public model name. For superseded development access groups, follow the targeted
+[existing-realm cleanup](../authentication/keycloak.md#existing-realm-cleanup).
 
 Refreshing or merging a catalog does not authorize a platform release, Flux
 reconciliation, credential change, or deployment. Follow
