@@ -123,13 +123,30 @@ service repository.
 The core chart currently uses this reviewed source and exact multi-architecture
 digest:
 
-- source commit: `cdfe54c3498818b21b33fb609fee02f2742b37ea`;
-- image: `ghcr.io/danny-avila/librechat-dev@sha256:f309d33a0f0b22fe5d3a804c5d197f40d58e69f74d49b68f250cbc502da7e6b2`.
+- source commit: `eaed216994b2604e050966cd6eaf3c2bdd359233`;
+- image: `ghcr.io/danny-avila/librechat-dev@sha256:d05623decc48482bd83560248eb6efbdb5e60ea844298ab2fbaa70b462feb611`;
+- publication: upstream [Docker Dev Images Build run 34323899158](https://github.com/danny-avila/LibreChat/actions/runs/34323899158), successful for that exact source; its manifest merge records the digest above.
 
 This temporary exception expires on `2026-09-30`, as defined in
 `base/release/config.yaml`. It permits only that digest and source commit. It
 does not permit a moving development tag, `latest`, another commit, or a release
 candidate. Replace it with a reviewed immutable upstream release before expiry.
+
+This deliberately replaces the previous `cdfe54c3498818b21b33fb609fee02f2742b37ea`
+exception; it does not extend the expiry. The app's permission provisioning hook
+uses the same pinned image and upstream model/cache APIs. Before another pin
+change, verify the packaged `createModels`, `createMethods`, `updateRoleByName`,
+`getRoleByName`, `standardCache`, Redis readiness, and tenant/cache-key behavior
+against the target image. Run the executable adapter tests and verify the hook
+against the actual target image. Confirm startup preserves both role permission
+blocks when global agent/marketplace interface overrides are absent. A swallowed
+database failure, stale cache, missing module, or deadline must not report success.
+
+The current main-branch contract is an alpha change, not a modification of the
+published `v0.3.3` tag or authorization to adopt it on stable clients. Operations
+PostgreSQL must reconcile the provisioning identity's ingress before the LibreChat
+app hook runs. Verify the Job result, effective endpoints, database/cache policy,
+application readiness, and persistent application data after authorized adoption.
 
 The Admin Panel uses a reviewed upstream version tag. The RAG API also uses an
 upstream version tag, but its package remains excluded in

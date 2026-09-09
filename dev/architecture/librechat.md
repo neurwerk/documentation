@@ -25,7 +25,7 @@ not compose that path unless all optional-package requirements are satisfied.
 
 | Component | Current chart pin |
 | --- | --- |
-| LibreChat | Source commit `cdfe54c3498818b21b33fb609fee02f2742b37ea`; image digest `sha256:f309d33a0f0b22fe5d3a804c5d197f40d58e69f74d49b68f250cbc502da7e6b2` |
+| LibreChat | Source commit `eaed216994b2604e050966cd6eaf3c2bdd359233`; image digest `sha256:d05623decc48482bd83560248eb6efbdb5e60ea844298ab2fbaa70b462feb611` |
 | Admin Panel | `1.0.0` |
 | RAG API | `v0.9.0` |
 | Code Interpreter | Source commit `fea707467600f3802d65596a6875c7822f25cfd8`; runtime images are not published |
@@ -117,6 +117,49 @@ The application uses separate probes:
 | Liveness | `/livez` | Checks the local process |
 
 ### Models And MCP
+
+The app enables `ENDPOINTS=custom,agents`. A finite `pre-install,pre-upgrade`
+permission Job in the app chart owns this base-role policy:
+
+| Permission | USER | ADMIN |
+| --- | --- | --- |
+| `AGENTS.USE` | true | true |
+| `AGENTS.CREATE` | false | true |
+| `AGENTS.SHARE` | false | true |
+| `AGENTS.SHARE_PUBLIC` | false | true |
+| `MARKETPLACE.USE` | true | true |
+
+The Job uses the exact application image's `@librechat/data-schemas` model and
+role methods and `@librechat/api` shared cache implementation. These are internal
+upstream APIs, not a stable provisioning CLI. It initializes absent USER/ADMIN
+roles from upstream defaults, writes only the five dotted permission paths using
+`updateRoleByName`, and verifies database, cache, and effective role readback.
+Existing unrelated permission fields are preserved. The adapter deliberately
+avoids `updateAccessPermissions`, which catches failures, and avoids global role
+migrations. No conversations, users, agents, or files are reset.
+
+Global `interface.agents` and `interface.marketplace` keys must remain omitted:
+upstream applies explicit interface overrides to both USER and ADMIN. With those
+keys omitted, application startup preserves the provisioned permission blocks.
+The existing `/access/neurwerk-librechat-admins` mapping to `librechat-admin`,
+including platform administrator inheritance, still selects ADMIN through OIDC.
+No identity-provider change is required; model and MCP grants remain separate.
+
+Flux orders shared credentials, operations PostgreSQL, and Valkey before the app.
+Earlier hook resources provide a dedicated tokenless ServiceAccount and egress
+only to DNS, the TLS DocumentDB gateway, and Valkey. The Job has a distinct
+instance label, so it is not an application Service backend. Operations PostgreSQL
+ingress explicitly accepts that provisioning identity. The Job receives only
+`MONGO_URI`, `REDIS_URI`, and the existing CA bundle, with the same Redis defaults
+and unscoped base-tenant cache keys as the app. Any future Redis prefix or tenant
+configuration change must update both consumers together.
+
+The runner retries at most 12 times under a 240-second process deadline; the Job
+has a 300-second deadline, below the 20-minute HelmRelease timeout. Failure blocks
+the release and retains the failed Job for diagnosis; retry replaces it and
+success deletes it. Hook ServiceAccount and NetworkPolicy resources remain until
+the next hook creation and are not garbage-collected by Helm uninstall. Repair
+forward and reconcile; do not reset persistent state or bypass the hook.
 
 LibreChat sends model and MCP requests through AgentGateway. AgentGateway
 authenticates the caller and enforces focused permissions:
