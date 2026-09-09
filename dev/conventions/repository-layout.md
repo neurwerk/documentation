@@ -13,6 +13,7 @@ shared documentation and is not a Git repository.
 | Private client repositories | Client-specific facts, values, ConfigMaps, and Flux cluster composition |
 | `agentgateway_extproc/` | AgentGateway external-processing adapter for the PII Engine |
 | `keycloak_api_key_bridge/` | API-key management and authorization decisions |
+| `keycloak_theme/` | Native `neurwerk` Keycloak login/email theme and Dockerfile image extending Keycloak `26.7.2`; GitHub repository `neurwerk/k8s_stack_keycloak_theme` |
 | `pii_engine/` | PII analysis, policy, and model runtime |
 | `studio/` | Studio API and web application |
 | `dify_ce_builder/` | Owned overlay and image build for upstream Dify |
@@ -49,6 +50,13 @@ Stage directories contain only aggregation. Keep product HelmReleases under
 ### Services, Tools, and Documentation
 
 - Application behavior and API contracts: the owning service repository.
+- Keycloak branding: `keycloak_theme/`, a product-oriented repository for CSS,
+  login footer, and email wrapper changes that retain upstream authentication.
+  Account, admin, and welcome themes are unchanged. Image publication and
+  platform adoption are pending; supported values belong in `base/` and explicit
+  realm theme handling belongs in `tooling/`, not the theme repository. See
+  [Native Theme](../authentication/keycloak.md#native-theme) and
+  [Image Releases](../operations/image-releases.md#keycloak-theme-image).
 - OpenBao bootstrap and supported provider updates:
   `tooling/cli_tools/openbao_stack_setup/`.
 - Cross-repository contracts and runbooks: `docs/dev/`.

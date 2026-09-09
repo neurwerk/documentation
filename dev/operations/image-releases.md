@@ -23,13 +23,15 @@ operations. Complete and verify each operation before starting the next.
 ## CI-Managed Images
 
 All image names in this table use the `ghcr.io/neurwerk/` prefix. The tag column
-lists the immutable tags that may be pinned in `base/`.
+lists immutable tag formats, not proof of publication or verified CI. Only
+published, verified images may be pinned in `base/`.
 
 | Repository | Version source | Immutable image tags | Platform consumers |
 | --- | --- | --- | --- |
 | `pii_engine/` | `pyproject.toml`, `uv.lock` | `k8s-stack-pii-engine:<version>-cpu`, `k8s-stack-pii-engine:<version>-cu124` | `charts/pii-engine/`, `charts/pii-engine-model-sync/` |
 | `agentgateway_extproc/` | `pyproject.toml`, `uv.lock` | `k8s-stack-agentgateway-extproc:<version>` | `charts/agentgateway-extproc/` |
 | `keycloak_api_key_bridge/` | `pyproject.toml`, `uv.lock` | `k8s-stack-keycloak-api-key-bridge:<version>` | `charts/keycloak-api-key-bridge/` |
+| `keycloak_theme/` | `VERSION` (initial `0.1.0`) | `k8s-stack-keycloak-theme:<version>` | None; unpublished, no platform pins or adoption |
 | `studio/` | `apps/api/pyproject.toml`, `apps/api/uv.lock`, `apps/web/package.json` | `k8s-stack-studio-api:<version>`, `k8s-stack-studio-web:<version>` | `charts/studio/api/`, `charts/studio/web/` |
 | `tooling/` | `pyproject.toml`, `uv.lock` | `k8s-stack-tooling:<version>` | Every matching value under `base/charts/` |
 
@@ -39,6 +41,28 @@ must match.
 
 The Tooling image is an auxiliary image in its consuming charts. Bump each
 affected chart's `version`, but keep the product's existing `appVersion`.
+
+### Keycloak Theme Image
+
+`keycloak_theme/` (`neurwerk/k8s_stack_keycloak_theme` on GitHub) owns the native
+`neurwerk` login/email theme and a Dockerfile image extending Keycloak `26.7.2`.
+The release workflow is configured to target
+`ghcr.io/neurwerk/k8s-stack-keycloak-theme:<VERSION>`, initially `0.1.0`.
+The bootstrap commit `cd3c484` passed its
+[validation run](https://github.com/neurwerk/k8s_stack_keycloak_theme/actions/runs/34355581114):
+four static checks, the amd64 container build, and 14 desktop/mobile Chromium
+authentication checks. This is not an image publication or deployment. No
+platform consumers or pins exist yet. The upstream Keycloak base image is
+digest-pinned in the Dockerfile.
+
+Publish and verify the immutable versioned image and digest before platform
+integration. Supported theme values in `base/` and explicit realm `loginTheme`
+and `emailTheme` handling in `tooling/` are pending, not implemented. Define and
+test omission behavior in that future integration without changing existing
+omission semantics implicitly. Normal reviewed `base/` and `tooling/` workflows
+still apply. Manual Admin Console selection is limited to disposable previews,
+not managed production adoption. See
+[Native Theme](../authentication/keycloak.md#native-theme) for branding scope.
 
 ### Publish A Service Image
 

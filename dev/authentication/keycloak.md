@@ -56,6 +56,32 @@ OpenBao and External Secrets provide these runtime Secrets:
 - `auth-keycloak-active-directory-secret`: Active Directory bind credentials;
   its ExternalSecret is rendered only when federation is enabled.
 
+## Native Theme
+
+The product repository `keycloak_theme/`
+([neurwerk/k8s_stack_keycloak_theme](https://github.com/neurwerk/k8s_stack_keycloak_theme))
+owns the native `neurwerk` login and email theme and its Dockerfile image,
+which extends Keycloak `26.7.2`. Branding is limited to CSS, a login footer,
+and an email wrapper; authentication behavior remains upstream. It does not
+customize the account, admin, or welcome themes, and the consoles remain
+unchanged.
+
+Login theme selection is realm-scoped, not a separate login theme per user's
+privilege. Administrators can therefore see the branded login when authenticating
+through a realm that selects it, without changing the Admin Console itself.
+
+The initial image version is `0.1.0`, not yet published or pinned by any platform
+consumer. Release configuration is not evidence of successful CI or publication;
+see [Image Releases](../operations/image-releases.md#keycloak-theme-image).
+
+Platform integration is pending and not implemented. First publish and verify
+the immutable image, then add supported theme values in `base/` and explicit
+realm `loginTheme` / `emailTheme` handling in `tooling/`. Preserve existing
+omission semantics until the future integration deliberately defines and tests
+what omitted theme settings mean; do not assume omission clears or selects a
+theme. Manual Admin Console theme selection is only for disposable previews,
+not managed production configuration.
+
 ## Server And Issuer
 
 Keycloak uses the external `postgres-auth` service. The `keycloak` role owns the
