@@ -71,9 +71,10 @@ Login theme selection is realm-scoped, not a separate login theme per user's
 privilege. Administrators can therefore see the branded login when authenticating
 through a realm that selects it, without changing the Admin Console itself.
 
-Theme image `0.1.0` and Tooling `0.6.1` are published. Platform support is merged
-on alpha `main` at `0cb8931` and an authorized alpha deployment has been verified;
-existing stable tags are unchanged.
+Theme image `0.1.1` is published; Tooling remains at `0.6.1`. PNG/SVG support is
+merged at `94c69da`, with existing PNG branding verified on alpha. Base `v0.3.5`
+is prepared at `b016489` (release PR #100), awaiting manual workstation publication;
+stable clients must not adopt it before the signed release is published and verified.
 See [Image Releases](../operations/image-releases.md#keycloak-theme-image).
 
 The platform contract keeps shared styles and templates fixed in the
@@ -85,13 +86,18 @@ public `neurwerk` theme. Clients supply only a company name and logo through the
 - The existing `authKeycloak.realmDisplayName` supplies `companyName` in both
   generated login and email `theme.properties`, each with `parent=neurwerk`.
 - `authKeycloak.branding.logoConfigMapName` selects a client-owned ConfigMap in
-  `auth-keycloak`, containing PNG key `company-logo.png`. A read-only projected
-  volume at `/opt/keycloak/themes/client-brand` combines the properties with the
-  logo at `login/resources/img/company-logo.png`.
+  `auth-keycloak`, containing fixed key `company-logo.<format>`.
+  `authKeycloak.branding.logoFormat` accepts `png` (default) or `svg` and supplies
+  the shared theme property `companyLogoFormat` for login only. A read-only
+  projected volume at `/opt/keycloak/themes/client-brand` combines the properties with the
+  logo at `login/resources/img/company-logo.<format>`.
 - Flux excludes `.png` source files by default. Store the PNG bytes as
   `apps/keycloak/company-logo.bin` and use generator entry
   `company-logo.png=company-logo.bin`; the mounted file remains a PNG. This keeps
   the logo in the source artifact without prohibited `.sourceignore` overrides.
+  SVG sources can remain `source.svg`, with generator entry
+  `company-logo.svg=source.svg`: Flux does not exclude `.svg` by default, so only
+  PNG sources need the `.bin` workaround.
 - `authKeycloak.loginTheme` and `authKeycloak.emailTheme` default to empty strings
   and are omitted from realm updates when empty. Omission neither selects nor
   clears a theme. Explicitly set both to `client-brand` to select the child;

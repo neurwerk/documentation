@@ -51,24 +51,27 @@ artifacts for the name/logo-only integration are:
 
 | Image (under `ghcr.io/neurwerk/`) | Digest | Source |
 | --- | --- | --- |
-| `k8s-stack-keycloak-theme:0.1.0` | `sha256:bc036ed63f6b1821e74a9744aa58ca177ebffb76df6d0ccd5bdf11a9a0f6441d` | `8ee87e5` |
+| `k8s-stack-keycloak-theme:0.1.1` | `sha256:4b94ab5b56f7784c487c1716d6229f82de3a67246640221792709192e885de5d` | `54d037ac60653358d574e0ae46fcad4b51b65f1e` |
 | `k8s-stack-tooling:0.6.1` | `sha256:60829618924ae8121817a2039faecff2dbf881debef852f84bec7c1ceb03a805` | `f15bc5b51b12db8e9c138057f78c3ac7150bc44d` |
 
-The theme [release run](https://github.com/neurwerk/k8s_stack_keycloak_theme/actions/runs/34402744015)
-built and published the image. The released redesign removed the old 14 browser
-tests; their bootstrap results are not validation of this release. Release CI
-verified the build, while a separate local disposable check confirmed actual
-name/logo inheritance on login, password reset, and email. No new test framework
-was added. Tooling [v0.6.1](https://github.com/neurwerk/k8s_stack_tooling/releases/tag/v0.6.1)
-adds explicit realm theme handling with omitted settings left unchanged.
+Theme `0.1.1` adds PNG/SVG logo selection through `companyLogoFormat`, retaining
+fixed shared styles and templates. Local disposable PNG and SVG login/email
+previews passed; no new test framework was added. Tooling
+[v0.6.1](https://github.com/neurwerk/k8s_stack_tooling/releases/tag/v0.6.1) is
+unchanged and provides explicit realm theme handling with omitted settings left
+unchanged.
 
-Base commit `0cb8931` pins these images and bumps all 11 Tooling-consuming chart
-versions without changing their product `appVersion`. The authorized alpha
+The earlier Base commit `0cb8931` pins theme `0.1.0` and Tooling `0.6.1` and bumps
+all 11 Tooling-consuming chart versions without changing their product
+`appVersion`. The authorized alpha
 rollout verified signed source reconciliation, healthy Helm releases, live
 desktop/mobile login and reset pages, the selected login/email themes, and
 unchanged realm user/client/role counts. Production reset emails were not sent;
 email rendering and reset completion were checked in the disposable preview.
-Existing stable tags are unchanged. See
+PNG/SVG support and the `0.1.1` pin are merged at `94c69da`; existing PNG login/reset
+pages were verified live on alpha. Base `v0.3.5` is prepared at `b016489` in
+[release PR #100](https://github.com/neurwerk/k8s_stack_base/pull/100), awaiting
+manual workstation publication. Stable adoption remains gated on that publication. See
 [Native Theme](../authentication/keycloak.md#native-theme) for the fixed shared
 templates, child-theme values, and two-step removal contract.
 
