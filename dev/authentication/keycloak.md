@@ -72,9 +72,9 @@ privilege. Administrators can therefore see the branded login when authenticatin
 through a realm that selects it, without changing the Admin Console itself.
 
 Theme image `0.1.1` is published; Tooling remains at `0.6.1`. PNG/SVG support is
-merged at `94c69da`, with existing PNG branding verified on alpha. Base `v0.3.5`
-is prepared at `b016489` (release PR #100), awaiting manual workstation publication;
-stable clients must not adopt it before the signed release is published and verified.
+merged at `94c69da`, with existing PNG branding verified on alpha. Signed Base
+`v0.3.5` is published at `b016489` (release PR #100), with its publication identity
+verified; an authorized stable client's public login/reset pages also serve SVG branding.
 See [Image Releases](../operations/image-releases.md#keycloak-theme-image).
 
 The platform contract keeps shared styles and templates fixed in the

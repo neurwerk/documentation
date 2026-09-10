@@ -69,9 +69,11 @@ desktop/mobile login and reset pages, the selected login/email themes, and
 unchanged realm user/client/role counts. Production reset emails were not sent;
 email rendering and reset completion were checked in the disposable preview.
 PNG/SVG support and the `0.1.1` pin are merged at `94c69da`; existing PNG login/reset
-pages were verified live on alpha. Base `v0.3.5` is prepared at `b016489` in
-[release PR #100](https://github.com/neurwerk/k8s_stack_base/pull/100), awaiting
-manual workstation publication. Stable adoption remains gated on that publication. See
+pages were verified live on alpha. Signed Base
+[v0.3.5](https://github.com/neurwerk/k8s_stack_base/releases/tag/v0.3.5) is published
+at `b016489`, with its `published-platform-release` identity artifact verified.
+An authorized stable client's public desktop/mobile login and reset pages were
+verified with the supplied SVG; internal cluster health was not inspected. See
 [Native Theme](../authentication/keycloak.md#native-theme) for the fixed shared
 templates, child-theme values, and two-step removal contract.
 
