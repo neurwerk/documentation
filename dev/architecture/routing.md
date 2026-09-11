@@ -130,6 +130,9 @@ Provider and MCP credentials come from OpenBao-backed Secrets, never ConfigMaps
 or client values. See [API Keys](../authentication/api-keys.md),
 [PII Policy Engine](pii-policy-engine.md), and [Secrets](secrets.md).
 
+The proposed [streaming workaround](../operations/agentgateway-streaming-workaround.md)
+describes the AgentGateway 1.5.0 auth-response buffering correction and adoption gates.
+
 The effective model catalog is capped at 256 destinations, and its compact PII
 metadata is capped at 16,384 UTF-8 bytes. AgentGateway derives callable model
 resources, extProc destination metadata, and required model permissions from
