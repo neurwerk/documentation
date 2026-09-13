@@ -102,11 +102,11 @@ session information. Model conversation headers are validated before use. Withou
 a usable conversation reference, extProc uses a random request nonce. Prompt
 content is never used as session identity.
 
-The [pending stateless MCP change](../operations/agentgateway-streaming-workaround.md)
+The [stateless MCP contract](../operations/agentgateway-streaming-workaround.md)
 rejects MCP transport session IDs and uses a fresh nonce for each MCP request.
 Per-call PII analysis and reversal remain; a blocked MCP call does not make later
-calls automatically blocked. Model conversation state is unchanged. Until that
-change is adopted, MCP session IDs remain inputs after protocol validation.
+calls automatically blocked. Model conversation state is unchanged. Clients on
+older platform releases retain those releases' session behavior.
 
 PII Engine may store sticky block and reroute decisions in Valkey. Stored state
 is bounded and contains only policy state and aggregate report facts. It never

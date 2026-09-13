@@ -99,7 +99,7 @@ from the reviewed model catalog; it cannot create or override catalog policy.
 Each MCP server has an exact `/mcp/<server-id>` route. Fail-closed extProc
 enforces MCP `2025-11-25` and processes PII where enabled.
 
-The pending [stateless MCP change](../operations/agentgateway-streaming-workaround.md)
+The [stateless MCP contract](../operations/agentgateway-streaming-workaround.md)
 sets every MCP backend to `Stateless`, with no mode switch. extProc rejects
 incoming `Mcp-Session-Id` headers with HTTP 404, even when PII analysis is disabled.
 It does not reject model conversation headers or application JSON `session_id`
@@ -136,8 +136,8 @@ Provider and MCP credentials come from OpenBao-backed Secrets, never ConfigMaps
 or client values. See [API Keys](../authentication/api-keys.md),
 [PII Policy Engine](pii-policy-engine.md), and [Secrets](secrets.md).
 
-The proposed [streaming workaround](../operations/agentgateway-streaming-workaround.md)
-describes the AgentGateway 1.5.0 auth-response buffering correction and adoption gates.
+The [streaming workaround](../operations/agentgateway-streaming-workaround.md)
+describes the AgentGateway 1.5.0 auth-response buffering correction and release status.
 
 The effective model catalog is capped at 256 destinations, and its compact PII
 metadata is capped at 16,384 UTF-8 bytes. AgentGateway derives callable model

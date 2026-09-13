@@ -1,7 +1,16 @@
 # AgentGateway Streaming And MCP Fixes
 
-Status: not deployed. The gateway policy must not be adopted
-until compatible bridge/extProc images are published and integration gates pass.
+Status: images published and configuration merged to base `main` in
+[PR #104](https://github.com/neurwerk/k8s_stack_base/pull/104), commit `b272ed0`.
+Available to alpha clients; running-cluster and application health are not yet
+verified. Existing platform tags are unchanged.
+
+- [API-key bridge 0.6.0](https://github.com/neurwerk/k8s_stack_keycloak_api_key_bridge/releases/tag/v0.6.0)
+- [agentgateway_extproc 0.7.0](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/releases/tag/v0.7.0)
+
+Both images are pinned by digest. Registry contents, `linux/amd64` platform, source
+commits, and release digests were verified. No database migration or PII Engine
+upgrade is required.
 
 ## Why It Is Needed
 
@@ -63,11 +72,10 @@ disposable check with the actual extProc service passed 68 HTTP checks, includin
 session-header rejection, fresh initialization, and fail-closed processor outage.
 These checks do not certify real clients, JWT recovery, PII Engine, or deployment.
 
-Publish and verify compatible bridge/extProc images before updating their pins.
-Adopt the bridge before the header-only gateway policy. Coordinate the stateless
-gateway and extProc activation: the new processor must not serve a stateful
-gateway. Validate the clients on alpha before stable adoption. A source merge
-alone does not update running images.
+This is approved as one development update using the existing release
+dependencies: bridge, gateway, then extProc. Live verification remains tracked in
+[issue #103](https://github.com/neurwerk/k8s_stack_base/issues/103). Adoption by
+clients on existing platform tags is deferred.
 
 [Issue #108](https://github.com/neurwerk/k8s_stack_base/issues/108) tracks a separate
 limitation: a late extProc failure can look like a normally completed response.
