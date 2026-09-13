@@ -7,6 +7,69 @@ Login preserves explicit local deep links; invalid or external return targets
 fall back to the default landing. Existing feature authorization remains in
 force on deep links.
 
+## Admin Users And Recent Sign-ins
+
+Studio [v0.9.0](https://github.com/neurwerk/k8s_stack_studio/releases/tag/v0.9.0)
+implements this contract, coordinated with Base's realm-roles chart `2.0.2`.
+Studio [PR #22](https://github.com/neurwerk/k8s_stack_studio/pull/22) and Base
+[PR #107](https://github.com/neurwerk/k8s_stack_base/pull/107) are merged. Both
+published image digests and their `linux/amd64` source revision were verified.
+This does not change existing signed platform releases or stable adoption.
+
+`GET /api/admin/users` retains its array response and optional `search`, with
+`first` as a nonnegative offset (default `0`) and `max` from `1` to `25`
+(default `25`). The Users page debounces search and cancels obsolete requests
+when the search or page changes.
+
+Status separates the account's `enabled` state (Enabled, Disabled, or unknown)
+from email verification (verified, unverified, unknown, or no email). The
+self-profile reports `enabled: null`: an issued JWT is not evidence of the
+account's current enabled state, even when the caller is an administrator.
+
+`GET /api/admin/recent-signins` accepts repeated `user_ids` query parameters
+for 1-25 IDs. It returns UTC ISO timestamps `window_start` and `window_end`
+exactly seven days apart, plus a `users` map keyed by requested user ID. Each
+entry contains `status` and nullable `timestamp`:
+
+| Status | Meaning | Timestamp |
+| --- | --- | --- |
+| `recorded` | Latest recorded successful `LOGIN` in the rolling seven-day window, across all realm clients | Normalized UTC ISO timestamp |
+| `no_record` | No matching event recorded in that window | `null` |
+| `unavailable` | Event access, lookup, or response validation failed | `null` |
+
+Both routes require `studio-user` and `keycloak-admin` and delegate upstream
+requests using the administrator's own bearer token, not service credentials.
+Event reads additionally require Keycloak `realm-management/view-events`.
+Studio queries by user and successful `LOGIN`, newest first, at most one event,
+with epoch-millisecond window bounds and no client filter. Each batch permits
+at most four concurrent event requests with a five-second HTTP timeout each.
+Only summary statuses and normalized timestamps reach the browser, never raw
+events or their details. Activity failures do not hide the Users list.
+
+The UI shows a relative sign-in time with an exact UTC timestamp, "No record in
+last 7 days", or "Unavailable". No record never means the user has never signed
+in: event collection, custom-disabled `LOGIN` capture, and retention can limit
+history. See [Keycloak event access](../authentication/keycloak.md#studio-event-access)
+for the broader upstream permission and platform-owned provisioning.
+
+### Alpha Verification
+
+On 2026-09-13, the authorized alpha rollout reconciled Base revision
+`beb2b790542127ca3f63a92bde5443833d9ffb3d` and the client's verified image
+overrides. Studio API and Web ran the exact `0.9.0` image digests; the public
+version endpoint returned `0.9.0`, the Users route returned 200, and both admin
+APIs returned 401 without authentication. The realm-roles Job completed and its
+log confirmed the `view-events` addition. All six Flux Kustomizations and all
+49 HelmReleases were ready. Brief startup readiness warnings recovered with
+zero Studio restarts; Studio and Keycloak logs showed no errors. The existing
+authentication PostgreSQL Pod remained ready and its claim remained bound.
+
+Isolated browser checks with synthetic data passed at desktop and mobile sizes,
+including statuses, timestamps, search, pagination, and unavailable activity.
+Live delegated administrator requests, saved-event configuration, and actual
+user-history contents were not inspected; an existing administrator session is
+needed for that final functional check. No bootstrap credentials were reused.
+
 ## Daily Model Usage
 
 The user info page uses Recharts 3.10.0 to show daily stacked bars by requested

@@ -207,6 +207,33 @@ requires aligned client values and group references before cleanup. Publication
 does not establish live adoption; release verification covers rendered/static
 tests and contract checks, not live installation, migration, cleanup, or recovery.
 
+### Studio Event Access
+
+For Studio `0.9.0`, Base's realm-roles chart `2.0.2` adds
+`realm-management/view-events` to the `keycloak-admin` composite alongside its
+existing user, client, and realm read permissions. Base owns provisioning;
+Studio forwards the administrator's bearer token and does not provision roles
+or use a service account for these reads.
+
+This expands upstream event-read permission, not merely permission to read
+Studio's recent-sign-in summary. Holders can read Keycloak user and admin events
+directly, including event details; Studio's successful-`LOGIN`, seven-day,
+timestamp-only filtering does not restrict that upstream authority.
+
+Realm provisioning enables event storage with default retention of `604800`
+seconds (seven days). Keycloak captures `LOGIN` by default, but a customized
+realm can disable that event type; provisioning does not set an explicit
+`enabledEventTypes` list. Missing records therefore cannot establish that a
+user never signed in. Missing event-read permission or failed lookups are
+reported as unavailable, not as an empty history.
+
+The existing post-install/post-upgrade Job applies this to both new and existing
+realms. Administrators need a newly issued token to use the added permission.
+The authorized alpha rollout completed the Job and confirmed the grant addition;
+stable adoption remains separate. See
+[Studio](../architecture/studio.md#admin-users-and-recent-sign-ins) for the API
+and UI contract and the limits of the recorded live verification.
+
 ### Existing-Realm Cleanup
 
 For an unused development client, use a one-time manual cleanup after the base

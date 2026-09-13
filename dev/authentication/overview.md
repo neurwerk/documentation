@@ -67,6 +67,14 @@ uses the authorized route's opaque target user ID to filter records. AgentGatewa
 sets each stored record's attribution only from verified identity; the browser
 does not call AgentGateway or set that attribution value.
 
+Studio `0.9.0` admin Users and recent-sign-ins routes require both
+`studio-user` and `keycloak-admin`, forwarding the administrator's own token to
+Keycloak. Base realm-roles chart `2.0.2` adds `realm-management/view-events` to
+the `keycloak-admin` composite. This grants broader upstream event reads, not
+only Studio's filtered sign-in summary; see
+[Keycloak event access](keycloak.md#studio-event-access). Alpha rollout evidence
+does not establish adoption by clients on existing signed platform releases.
+
 ### AgentGateway Permissions
 
 AgentGateway uses Keycloak client roles with this permission format:
