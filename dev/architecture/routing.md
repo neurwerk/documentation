@@ -99,6 +99,12 @@ from the reviewed model catalog; it cannot create or override catalog policy.
 Each MCP server has an exact `/mcp/<server-id>` route. Fail-closed extProc
 enforces MCP `2025-11-25` and processes PII where enabled.
 
+The pending [stateless MCP change](../operations/agentgateway-streaming-workaround.md)
+sets every MCP backend to `Stateless`, with no mode switch. extProc rejects
+incoming `Mcp-Session-Id` headers with HTTP 404, even when PII analysis is disabled.
+It does not reject model conversation headers or application JSON `session_id`
+fields. New MCP integrations must work without persistent gateway sessions.
+
 - Reviewed OpenRouter models are selected in
   `client_*/config/openrouter-catalog-policy.json`; the generated values and
   complete pricing catalog are committed in the same client repository.

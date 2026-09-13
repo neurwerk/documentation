@@ -98,9 +98,15 @@ matched text, previews, spans, hashes, ciphertext, or reversal plaintext.
 ## Sessions And Reversal
 
 extProc derives an opaque session key from trusted identity, destination, and
-session information. Model conversation headers and MCP session IDs are inputs
-only after protocol validation. If no usable session reference exists, extProc
-uses a random request nonce. Prompt content is never used as session identity.
+session information. Model conversation headers are validated before use. Without
+a usable conversation reference, extProc uses a random request nonce. Prompt
+content is never used as session identity.
+
+The [pending stateless MCP change](../operations/agentgateway-streaming-workaround.md)
+rejects MCP transport session IDs and uses a fresh nonce for each MCP request.
+Per-call PII analysis and reversal remain; a blocked MCP call does not make later
+calls automatically blocked. Model conversation state is unchanged. Until that
+change is adopted, MCP session IDs remain inputs after protocol validation.
 
 PII Engine may store sticky block and reroute decisions in Valkey. Stored state
 is bounded and contains only policy state and aggregate report facts. It never

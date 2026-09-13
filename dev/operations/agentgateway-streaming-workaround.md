@@ -1,4 +1,4 @@
-# AgentGateway Streaming Workaround
+# AgentGateway Streaming And MCP Fixes
 
 Status: not deployed. The gateway policy must not be adopted
 until compatible bridge/extProc images are published and integration gates pass.
@@ -30,18 +30,50 @@ responses. HTTP errors keep their status with a fixed safe body, so optional GET
 405, expired-session 404, and authentication errors no longer become false
 processor 503s. Upstream OAuth challenges and diagnostics are not forwarded.
 Correlated JSON-RPC and tool errors remain operation errors. This does not add
-retries, migrate MCP versions, or change PII policy.
+retries or migrate MCP versions.
+
+## Stateless MCP
+
+All gateway MCP backends use `Stateless`, without a configuration switch.
+`agentgateway_extproc` rejects any incoming `Mcp-Session-Id` header before
+forwarding or PII processing, including empty or duplicate headers and when PII
+analysis is disabled. After HTTP parsing, authorization, and trusted metadata
+validation, the response is HTTP 404 with this fixed body:
+
+```json
+{"error":"Stateful MCP sessions are currently unsupported pending an AgentGateway session-ownership fix. Reinitialize without Mcp-Session-Id."}
+```
+
+This tells a client with an old session to initialize again without the header.
+Each accepted MCP call gets independent PII state. Analysis and reversal remain,
+but an earlier blocked call does not automatically block the next one. Model
+conversation IDs, login sessions, and conversation trace grouping are unchanged.
+
+Brave and Context7 are the current targets. Future MCP integrations must support
+sessionless calls; persistent gateway sessions and standalone event subscriptions
+are not supported by this contract.
 
 ## Validation And Removal
 
 `base/tests/live/agentgateway/README.md` documents the verified binary installation
 and opt-in `make streaming-acceptance` check. Normal `make check` does not need
-the binary. The local regression proves streaming before upstream EOF; it does
-not certify real clients, JWT recovery, PII, or production deployment.
+the binary. The local regression proves streaming before upstream EOF and native
+stateless MCP initialization, tool calls, and GET/DELETE 405 responses. A separate
+disposable check with the actual extProc service passed 68 HTTP checks, including
+session-header rejection, fresh initialization, and fail-closed processor outage.
+These checks do not certify real clients, JWT recovery, PII Engine, or deployment.
 
-Adoption remains blocked on the separate session-isolation and late-stream-error
-integration gates. Publish and adopt the bridge before the header-only gateway
-policy. A source merge alone does not update running images.
+Publish and verify compatible bridge/extProc images before updating their pins.
+Adopt the bridge before the header-only gateway policy. Coordinate the stateless
+gateway and extProc activation: the new processor must not serve a stateful
+gateway. Validate the clients on alpha before stable adoption. A source merge
+alone does not update running images.
+
+[Issue #108](https://github.com/neurwerk/k8s_stack_base/issues/108) tracks a separate
+limitation: a late extProc failure can look like a normally completed response.
+This is accepted for interactive chat and does not alone block these fixes.
+Reassess before unattended actions. The reproduced rejected message was withheld;
+no PII leak was demonstrated.
 
 Remove the workaround only after a reviewed AgentGateway release fixes the
 dependency scope and passes the same streaming regression without the header.
