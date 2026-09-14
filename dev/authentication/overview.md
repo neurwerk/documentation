@@ -127,6 +127,14 @@ API keys contain an immutable permission grant. During validation, the API-key
 bridge intersects that grant with the enabled principal's current AgentGateway
 roles. Revoked or expired keys and disabled principals are rejected.
 
+The bridge source also returns sorted, unique full Keycloak group paths in
+`groups`, in both the validation body and trusted header. Memberships belong to
+the key's principal (the service account for managed keys), share the entitlement
+cache TTL, and never expand the permission grant; lookup failures fail closed.
+AgentGateway keeps groups internal and accepts older bridge responses without
+them as `[]`. This addition needs a new bridge image release and adoption;
+published bridge `0.6.0` does not return groups.
+
 ## Trust Boundaries
 
 - Services validate JWT signatures, issuer, audience or authorized party,
