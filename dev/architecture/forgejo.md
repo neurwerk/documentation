@@ -36,6 +36,13 @@ repositories, tokens, SSH keys, helper resources and forwards were removed.
 Public-mode, rotation, outage and full-recovery tests remain unverified; see the
 [verified alpha results](../operations/forgejo.md#verified-alpha-results).
 
+Those dated results precede the implemented uniform Base application-admin
+policy: enabled Forgejo now contributes `forgejo-admin` to `platform-admin`
+unless the client excludes it through `authKeycloak.platformAdminRoleExclusions`.
+This uses existing Forgejo roles and leaves model/MCP authorization separate.
+The subsequent alpha policy rollout and redundant membership cleanup are
+recorded in the [transition procedure](../operations/forgejo.md#platform-admin-transition).
+
 There is no existing-repository migration, runner deployment, or runner
 credential provisioning in this integration. Do not infer support for importing
 another installation or running CI jobs from Forgejo's upstream features.

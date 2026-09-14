@@ -40,10 +40,21 @@ does not implicitly grant model or MCP access. MCP access never automatically
 grants model access. The canonical set contains 13 platform-defined groups; see
 [Roles And Access Groups](keycloak.md#roles-and-access-groups).
 
-The staged optional Forgejo catalog adds two groups only when selected. Its
-native authentication and offboarding boundary is documented separately in
-[Forgejo authentication](forgejo.md); platform administration does not
-automatically grant Forgejo access.
+Base unifies existing supported application roles under `platform-admin` by
+default, with the narrow subtract-only client setting
+`authKeycloak.platformAdminRoleExclusions: []`. This is not new root, Kubernetes,
+or OpenBao administrator authority, nor unrestricted rights in every product;
+roles such as `studio-user` retain their existing scope. The initial administrator
+defaults to `/access/neurwerk-platform-admins` only. Model/MCP groups and their
+explicit baseline grants remain separate and unchanged.
+
+The staged optional Forgejo catalog adds two groups only when selected. Under
+the implemented policy, enabled Forgejo supplies inherited `forgejo-admin` and
+`forgejo-user` access to platform administrators unless `forgejo-admin` is
+excluded. Implementation does not establish live adoption or membership cleanup.
+See [Keycloak](keycloak.md#uniform-application-administration) for the exact
+exclusion contract and [Forgejo authentication](forgejo.md) for its native
+authentication and offboarding boundary.
 
 ## Authorization
 

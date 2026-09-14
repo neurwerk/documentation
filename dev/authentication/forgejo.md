@@ -34,11 +34,24 @@ selected:
 | `/access/neurwerk-forgejo-admins` | `forgejo-admin`, which includes `forgejo-user` | Maps an admitted user to Forgejo administrator. |
 
 The disabled catalog remains at 13 standard groups; the selected catalog has
-15. `platform-admin` and the platform administrator group do not automatically
-inherit Forgejo access. Membership must be assigned explicitly. The chart
-selects the separate `files/forgejo-access.yaml` catalog only when enabled;
-verify both rendered modes before adoption. Disabling
+15. Under the implemented Base policy, `platform-admin` inherits `forgejo-admin`
+and therefore `forgejo-user` when Forgejo is enabled. Membership in
+`/access/neurwerk-platform-admins`, including the initial administrator's sole
+Base default membership, is sufficient for that inheritance. Clients may remove
+this inherited grant with `authKeycloak.platformAdminRoleExclusions: ['forgejo-admin']`.
+That exclusion is valid even while Forgejo is disabled; it does not enable
+Forgejo or revoke separately assigned application memberships or native tokens.
+The list replaces the entire exclusion list and cannot add roles or model/MCP
+access. See [Keycloak](keycloak.md#uniform-application-administration).
+
+The chart selects the separate `files/forgejo-access.yaml` catalog only when
+enabled; verify both rendered modes before adoption. Disabling
 selection is not a promise to delete already-created groups, roles, or accounts.
+The declared `platform-admin` composite does reconcile removal of its Forgejo
+grant, but other access paths remain subject to explicit cleanup and offboarding.
+The initial alpha results predate this policy; the separate
+[transition procedure](../operations/forgejo.md#platform-admin-transition) records
+the subsequent inherited-access verification and cleanup.
 
 The native source consumes a flat multivalued `forgejo_roles` claim, including
 the ID token and userinfo representations required by Forgejo. The OIDC Job's

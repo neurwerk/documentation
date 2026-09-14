@@ -25,8 +25,9 @@ the backup waiver does not waive the two-custodian procedure.
 ## Before Adoption
 
 1. Complete and review Base, Tooling, and client changes together. Verify disabled
-   defaults, 13 groups when unselected and 15 when selected, no automatic
-   platform-admin inheritance, and `fullScopeAllowed: false` with only the two
+   defaults, 13 groups when unselected and 15 when selected, default
+   `platform-admin` inheritance of enabled Forgejo unless excluded, and
+   `fullScopeAllowed: false` with only the two
    Forgejo role scope mappings. Verify `forgejo.oidc.caConfigMap` and its optional
    namespace-local `ca.crt` bundle when system roots do not trust the issuer.
 2. Use `openbao-stack-setup` `0.2.12` from tooling commit
@@ -51,8 +52,9 @@ and full-recovery acceptance are not established by those results.
 
 ## Verified Alpha Results
 
-On 2026-09-14, the operator completed credential reconciliation and authorized
-temporary test accounts, repositories, and keys. The following checks passed:
+On 2026-09-14, before the uniform platform-admin policy, the operator completed
+credential reconciliation and authorized temporary test accounts, repositories,
+and keys. The following historical checks passed:
 
 - All Flux sources/stages and Helm releases Ready, with the exact pinned image.
 - Production cert-manager certificate Ready and canonical hostname/chain verified
@@ -84,10 +86,71 @@ not a visual desktop/mobile browser check. The user's workstation still needs
 its own canonical-hostname tunnel. The operator-selected existing account's
 explicit Forgejo admin membership and both effective Forgejo roles were verified;
 its prior declared groups remained present, with no pending account actions.
-This is not automatic platform-admin inheritance. No backup or full restore was
-performed under the scoped waiver;
+That check used explicit membership, not the subsequently implemented default
+platform-admin inheritance; it does not verify the new policy or its cleanup.
+No backup or full restore was performed under the scoped waiver;
 public mode, credential/certificate rotation, and outage/offboarding drills
 remain separate checks.
+
+## Platform-Admin Transition
+
+The implemented Base policy grants enabled Forgejo administration through
+`platform-admin` by default, subject to the narrow
+[application-role exclusions](../authentication/keycloak.md#uniform-application-administration).
+Live adoption, removal of redundant client membership declarations, and live
+membership cleanup are not established by the historical results above.
+
+The subsequent authorized alpha transition passed on 2026-09-14 using Base
+[PR #120](https://github.com/neurwerk/k8s_stack_base/pull/120), commit
+`63ff2a0b9965075afcd543ad4839828ff8c96600`, and realm-roles chart `2.2.0`:
+
+- The platform-admin composite gained the enabled Forgejo role while its entire
+  inherited graph remained free of AgentGateway, model, and MCP grants.
+- A fresh temporary account with only platform-admin group membership reached
+  Forgejo's native admin interface and had zero effective AgentGateway roles.
+  Its Keycloak and Forgejo accounts and test forward were removed afterward.
+- The client removed its redundant direct-group declaration only after Base
+  readiness and inherited SSO verification. The initial-admin Job then completed
+  using the three intended platform/model/MCP memberships.
+- Exactly one live membership was removed from the selected real account: the
+  direct Forgejo-admin group. Before/after checks preserved all other memberships,
+  account state, direct role mappings, effective realm and AgentGateway roles,
+  and resource-group policies. Both Forgejo roles remained effective.
+- All 51 Helm releases and all Flux stages were Ready afterward, and the
+  temporary policy-check Pod and NetworkPolicy were removed.
+
+These checks did not change the real account's password, sessions, native
+tokens, SSH keys, or repositories. Client exclusion cases were validated by
+rendered tests, not by temporarily withdrawing live administrator access.
+
+For an authorized alpha client transition:
+
+1. Adopt the reviewed Base implementation first. Verify its exact source revision
+   and current-generation Ready conditions, including successful realm-role
+   reconciliation, before changing the client's initial-admin membership list.
+2. Verify the effective `platform-admin` composite and fresh Forgejo claims,
+   admission, and native administrator status. Account for any approved
+   `platformAdminRoleExclusions`; a direct Forgejo membership must not mask the
+   inherited-role check. Confirm model/MCP groups, baseline grants, and resource
+   policy are unchanged.
+3. Only after Base is Ready and inheritance is verified, remove the redundant
+   `/access/neurwerk-forgejo-admins` entry from the client's declared initial-admin
+   list through its reviewed `main` change. Preserve the platform-admin membership
+   and all intended separate model/MCP memberships and grants.
+4. After that client change reconciles, explicitly remove only the now-redundant
+   live Forgejo-admin group membership under separate cleanup authorization.
+   Initial-admin provisioning adds memberships but never removes old ones.
+   Preserve the group itself, other users, and unrelated memberships. Verify
+   inherited access with fresh claims and native login after cleanup.
+5. Record the actual revisions, readiness, effective permissions, and cleanup
+   results in documentation only after verification. Do not infer completion
+   from merged configuration or a successful render.
+
+Excluding `forgejo-admin` reconciles removal of that direct composite grant, not
+revocation of every access path. Direct application memberships and native
+sessions, tokens, SSH keys, and deploy keys require the separate
+[offboarding procedure](../authentication/forgejo.md#mandatory-offboarding)
+when access is meant to end.
 
 ## Secret Contract
 
@@ -183,7 +246,11 @@ current-generation readiness; do not expose sensitive request content.
   Pod-side DNS separately. Verify strict Keycloak discovery and issuer trust.
 - Test login rejection without `forgejo-user`, normal user admission, and native
   administrator mapping. Verify the claim contains only the approved Forgejo
-  roles and platform-admin membership alone grants no Forgejo access.
+  roles. With Forgejo enabled and no exclusion, verify platform-admin membership
+  alone supplies both Forgejo roles and native administrator admission. With
+  `forgejo-admin` excluded, verify that inherited grant is absent using a test
+  identity without another Forgejo grant; do not mistake existing native access
+  for proof of current Keycloak authorization.
 - Test actual Git clone, fetch, and push over native HTTPS and approved private
   SSH, plus LFS upload/download and repository permission denial. Confirm no
   public SSH path exists. Never put tokens in command URLs or shell history.

@@ -70,7 +70,30 @@ mappings from the immutable chart file
 Rendering rejects `authKeycloak.accessGroups`, `authKeycloak.realmRoles`, and
 `authKeycloak.realmRoleComposites` overrides; omit those keys entirely.
 Memberships, directory settings, and explicit resource grants remain
-client-owned. See
+client-owned.
+
+With realm-roles chart `2.2.0` or later, the one supported application-administration exception is
+`authKeycloak.platformAdminRoleExclusions`, default `[]`, in client Keycloak
+values. It subtracts approved direct application roles from Base's
+`platform-admin` composite; it does not override the immutable catalog or group
+mappings and cannot add authorization. Allowed entries are `keycloak-admin`,
+`api-key-admin`, `opensearch-admin`, `langfuse-admin`, `pii-admin`, `studio-user`,
+`librechat-admin`, `dify-admin`, and `forgejo-admin` only. For example:
+
+```yaml
+authKeycloak:
+  platformAdminRoleExclusions: ['forgejo-admin']
+```
+
+Each override replaces the entire list, not individual entries; `[]` restores
+all default application grants, including Forgejo only when enabled.
+`forgejo-admin` is a valid exclusion even while Forgejo is disabled. Rendering
+rejects non-lists, non-string entries, duplicates, unknown roles, group names,
+and model/MCP permissions (including `llm:invoke`). Arbitrary role, group, and
+catalog overrides remain prohibited. This setting changes neither resource
+groups nor existing explicit model/MCP baseline grants or catalog policy. It
+does not revoke direct application-group memberships or native credentials.
+See
 [Keycloak](../authentication/keycloak.md#roles-and-access-groups).
 
 Clients configure direct, local, and other custom model destinations in

@@ -41,7 +41,7 @@ HelmRelease.
 | `base/releases/shared/` | Shared platform defaults. |
 | `base/releases/keycloak/app-defaults.yaml` | Keycloak release defaults. |
 | `client_*/config/client.yaml` | Shared client facts such as realm, hostname, OIDC settings, and AgentGateway roles. |
-| `client_*/apps/keycloak/values.yaml` | Realm display name, theme selection, name/logo branding, initial administrator, SMTP, and optional Active Directory settings. |
+| `client_*/apps/keycloak/values.yaml` | Realm display name, theme selection, name/logo branding, initial administrator, application-admin role exclusions, SMTP, and optional Active Directory settings. |
 | OpenBao-backed Secrets | Passwords, confidential OIDC client secrets, SMTP credentials, and Active Directory bind credentials. |
 
 The client Keycloak Kustomization generates `client-values` and
@@ -155,14 +155,16 @@ The platform defines these 13 canonical groups as flat children of `/access`:
 
 The staged optional Forgejo contract preserves these 13 groups when unselected
 and adds `neurwerk-forgejo-users` and `neurwerk-forgejo-admins` only when selected.
-It does not add automatic Forgejo inheritance to platform administrators. These
-selection changes are pending adoption, not part of the published group contract
-below. See [Forgejo authentication](forgejo.md#roles-and-admission) for the native
+Under the implemented uniform application-admin policy, enabled Forgejo also
+adds `forgejo-admin` to `platform-admin` by default. Adoption and live cleanup
+remain separate from implementation and the published baseline described below.
+See [Forgejo authentication](forgejo.md#roles-and-admission) for the native
 role boundary, restricted OIDC claim, and mandatory manual offboarding.
 
 The `neurwerk-` prefix is intentional: it is the supported Active Directory
 namespace and satisfies federation prefix validation. Existing application
-realm roles and composites are unchanged. Clients inherit the platform group
+roles retain their supported permissions; the platform-admin composition is
+described below. Clients inherit the platform group
 definitions and application mappings rather than copying them. Clients own
 local or directory memberships, directory settings, and explicit model and MCP
 grants.
@@ -209,10 +211,61 @@ automatically delete every previously created role or group.
 
 See [OIDC Clients](oidc.md) for client registration and token validation.
 
-These group and grant rules are published in `v0.3.3`. Its tagged migration
-requires aligned client values and group references before cleanup. Publication
+The baseline canonical group and explicit resource-grant rules were published
+in `v0.3.3`, not the later Forgejo inheritance and exclusion policy below. Its
+tagged migration requires aligned client values and group references before cleanup. Publication
 does not establish live adoption; release verification covers rendered/static
 tests and contract checks, not live installation, migration, cleanup, or recovery.
+
+### Uniform Application Administration
+
+This policy is introduced in Base realm-roles chart `2.2.0`; it is not part of
+the published `v0.3.6` baseline.
+
+Base's `/access/neurwerk-platform-admins` group maps to `platform-admin`, which
+inherits the existing supported application roles by default. The eight core
+direct grants are `keycloak-admin`, `api-key-admin`, `opensearch-admin`,
+`langfuse-admin`, `pii-admin`, `studio-user`, `librechat-admin`, and `dify-admin`.
+When `forgejo.enabled: true`, Base adds `forgejo-admin`, which inherits
+`forgejo-user`. LibreChat and Dify administrator roles likewise retain their
+existing user-role composites.
+
+This unifies existing supported roles, not unrestricted rights in every product.
+For example, `studio-user` supplies admission and `keycloak-admin` retains its
+existing scoped realm-management permissions. No missing product permissions,
+root access, Kubernetes administrator authority, or OpenBao administrator
+authority are introduced.
+
+Clients may subtract only those nine direct grants with
+`authKeycloak.platformAdminRoleExclusions`, default `[]`:
+
+```yaml
+authKeycloak:
+  platformAdminRoleExclusions: ['forgejo-admin']
+```
+
+The list replaces the entire inherited exclusion list; `[]` restores the eight
+core grants plus Forgejo when enabled. `forgejo-admin` remains a known valid
+exclusion while Forgejo is disabled, without enabling its roles or groups.
+Non-lists, non-string entries, duplicates, unknown roles, group names, and
+indirect user roles such as `forgejo-user` are rejected. Model/MCP roles and
+`llm:invoke` are never valid exclusions. This is a subtract-only exception to
+the immutable catalog contract, not permission to override role definitions,
+group mappings, or catalogs or to add authorization.
+
+Exclusions change only the direct children of `platform-admin`, not the
+application roles themselves or their other composites. Reconciliation removes
+stale direct composite grants, including when the resulting list is empty.
+Other grants remain effective: an exclusion does not revoke direct user roles,
+application-group memberships, or native application sessions and tokens.
+Initial-user membership provisioning is add-only and requires explicit cleanup
+after verification when a membership is no longer intended.
+
+Model and MCP access remain separate. Keep their existing groups, explicit
+baseline grants, and resource catalog policy unchanged; platform administration
+does not imply either resource grant. See the
+[Forgejo transition procedure](../operations/forgejo.md#platform-admin-transition)
+for readiness, membership cleanup, and the recorded alpha verification.
 
 ### Studio Event Access
 
@@ -271,10 +324,13 @@ intended memberships rather than treating them as unused development state.
 ## Initial Administrator
 
 Configure the initial administrator in `client_*/apps/keycloak/values.yaml`.
-The Job looks up the user by username. Fresh-bootstrap defaults and configured
-initial-admin memberships must use the canonical groups above, including
-`/access/neurwerk-platform-admins` for platform administration. Administrative
-membership alone must not supply model or MCP grants.
+The Job looks up the user by username. Base's `authKeycloak.initialAdminGroups`
+default remains `'["/access/neurwerk-platform-admins"]'` only. This inherits the
+supported application roles, including enabled Forgejo unless excluded; no
+separate application-admin membership is needed for that inheritance. Client
+membership lists must use the canonical groups above. Preserve separately
+declared model/MCP memberships and baseline grants: administrative membership
+alone must not supply model or MCP grants.
 
 For a new user, it:
 
