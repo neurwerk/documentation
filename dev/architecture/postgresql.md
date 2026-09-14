@@ -69,6 +69,18 @@ Langfuse, or LibreChat RAG PostgreSQL databases. Those databases use separate
 roles, grants, and port-scoped NetworkPolicies. Provisioning also verifies that
 `librechat` cannot connect to them.
 
+### Optional Forgejo Database
+
+The [staged optional Forgejo integration](forgejo.md) adds a native PostgreSQL
+database and dedicated role, both named `forgejo`, only when selected. Its
+Service connection uses `5432`, targeting Pod port `9712`, under the same
+operations-only plaintext/SCRAM exception. It is not another DocumentDB gateway
+consumer. Tooling copies `forgejo/internal:dbPassword` to
+`infra-postgres-operations/internal:forgejoPassword`; the separate
+`forgejo-postgres-values` Secret supplies provisioning. This package is not yet
+released or deployed. Once adopted, Forgejo joins the complete shared-instance
+backup and recovery domain and also requires its own PVC and durable secrets.
+
 ## Provisioning
 
 Finite post-install and post-upgrade Jobs reconcile roles, databases, grants,

@@ -215,6 +215,22 @@ Kubernetes consumers. Failed runs are safe to retry. Record the custodians,
 purpose, schema transition, time, and result in the external access log. Do not
 record package paths, shares, or tokens.
 
+### Staged Optional Forgejo Catalog
+
+Forgejo requires the selection-gated `openbao-stack-setup` `0.2.12` catalog,
+still at schema `4`, from tooling commit
+`7a00c0d7a725a500ca251d699ce3f00dff57e660`; the baseline prerequisite above must
+not be assumed to contain it. The optional packages remain excluded until the target release
+contract is updated and adoption is authorized.
+
+Selection is read from `auth-keycloak/client-values` on each run. Stage namespace
+and secret-sync resources first, then reconcile `forgejo.enabled: true` into
+that ConfigMap while keeping the application stage suspended. Run the approved
+new tool before starting the application. The exact namespace store is
+`forgejo-openbao-secret-store`. See
+[Forgejo operations](forgejo.md#staged-activation) for sequencing, credential
+copies, and checks that avoid a database/password dependency cycle.
+
 ## Update Provider Credentials
 
 ```bash

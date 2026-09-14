@@ -153,6 +153,13 @@ The platform defines these 13 canonical groups as flat children of `/access`:
 - `neurwerk-llm-all-users`
 - `neurwerk-mcp-all-users`
 
+The staged optional Forgejo contract preserves these 13 groups when unselected
+and adds `neurwerk-forgejo-users` and `neurwerk-forgejo-admins` only when selected.
+It does not add automatic Forgejo inheritance to platform administrators. These
+selection changes are pending adoption, not part of the published group contract
+below. See [Forgejo authentication](forgejo.md#roles-and-admission) for the native
+role boundary, restricted OIDC claim, and mandatory manual offboarding.
+
 The `neurwerk-` prefix is intentional: it is the supported Active Directory
 namespace and satisfies federation prefix validation. Existing application
 realm roles and composites are unchanged. Clients inherit the platform group

@@ -40,6 +40,11 @@ does not implicitly grant model or MCP access. MCP access never automatically
 grants model access. The canonical set contains 13 platform-defined groups; see
 [Roles And Access Groups](keycloak.md#roles-and-access-groups).
 
+The staged optional Forgejo catalog adds two groups only when selected. Its
+native authentication and offboarding boundary is documented separately in
+[Forgejo authentication](forgejo.md); platform administration does not
+automatically grant Forgejo access.
+
 ## Authorization
 
 ### Realm Roles
@@ -59,6 +64,11 @@ Examples include:
 
 Applications must enforce roles at the API boundary. Hiding a feature in the UI
 is not authorization.
+
+Forgejo's staged integration uses native OIDC role admission followed by native
+session, API, and repository authorization, not a Keycloak claim check on each
+Git or API request. This scoped native boundary does not change the API role
+requirements for the other platform applications.
 
 Studio permits callers to read their own usage. Reading another principal's
 usage requires the existing `langfuse-admin` realm role and does not grant
@@ -129,6 +139,7 @@ roles. Revoked or expired keys and disabled principals are rejected.
 ## Related Documentation
 
 - [Keycloak](keycloak.md)
+- [Forgejo native authentication (staged)](forgejo.md)
 - [OIDC clients](oidc.md)
 - [API keys](api-keys.md)
 - [Routing and AgentGateway](../architecture/routing.md)

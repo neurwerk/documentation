@@ -140,6 +140,15 @@ LibreChat requires distinct certificates for its main application and Admin
 Panel hostnames in `frontend-librechat`. The Rook-owned public RGW hostname in
 `infra-rook-ceph` also requires its own certificate.
 
+## Forgejo Certificate Ownership
+
+For the staged optional Forgejo integration, the product owns one explicit
+`forgejo-tls` Certificate even without a public Gateway. Its exact approval
+profile uses the existing selected public ClusterIssuer; an optional Gateway
+reuses the Secret without requesting another Certificate. Forgejo browser trust
+and outbound Keycloak issuer trust are separate. See
+[Forgejo certificates and trust](forgejo.md#certificates-and-trust).
+
 ## Microsoft Active Directory CA Trust
 
 When Active Directory federation is enabled, the client repository provides the

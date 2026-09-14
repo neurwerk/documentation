@@ -56,6 +56,17 @@ internally while Route53 remains authoritative for ACME challenges and other
 public records. Active Directory Certificate Services is not part of the public
 Gateway certificate path.
 
+### Private Forgejo Exception
+
+The [staged optional Forgejo integration](forgejo.md#canonical-address-and-transport)
+uses native HTTPS when its public Gateway is disabled. Approved Pod consumers
+must resolve its exact canonical hostname to `forgejo.forgejo.svc.cluster.local`,
+not to Traefik. The Forgejo Pod's local callbacks use a separate loopback host
+alias. Workstation tunnel resolution remains independent of both mechanisms.
+Keycloak issuer resolution and trust must be checked separately; do not change
+the shared routing mode or issuer route merely to route Forgejo. Public-DNS
+Keycloak egress needs reviewed exact IP CIDRs before authorized rollout.
+
 ## Rollout Contract
 
 Use this order for an internal-routing client:

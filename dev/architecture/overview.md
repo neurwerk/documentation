@@ -94,6 +94,7 @@ namespace-local Kubernetes Secrets used at runtime.
 - [Network isolation](networking.md)
 - [Canonical endpoint DNS routing](split-horizon-dns.md)
 - [Shared PostgreSQL](postgresql.md)
+- [Forgejo (staged optional integration)](forgejo.md)
 - [Rook/Ceph storage](rook-ceph.md)
 - [LibreChat](librechat.md)
 - [Observability](observability.md)
