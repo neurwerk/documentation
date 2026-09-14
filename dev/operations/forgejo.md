@@ -1,10 +1,26 @@
 # Forgejo Operations
 
-This runbook describes the staged optional integration, not an authorized
-deployment. Forgejo is currently excluded from platform release eligibility;
-the staged client selector is false and all optional stages are suspended.
+This runbook describes the optional integration. Forgejo is currently excluded
+from stable platform release eligibility. Preparation, credential provisioning,
+and application startup are separate stages.
 Do not contact a cluster, open a tunnel, change credentials, or touch persistent
 data without explicit authorization.
+
+## Authorized Alpha Evaluation
+
+On 2026-09-14, the operator authorized the initial private alpha rollout and
+explicitly waived the pre-install shared-database backup for that rollout.
+The client rollout issue records the scope. Existing database state was observed;
+the waiver does not declare it empty, authorize deletion or replacement, or
+establish that recovery is possible. It does not change backup requirements for
+other rollouts or stable adoption.
+
+This specific alpha evaluation may use the reviewed Forgejo source while its
+packages remain excluded from stable release eligibility. No stable tag is
+published or adopted by this exception. Keep the application suspended until
+the operator completes the required OpenBao ceremony and credential consumers
+converge. The operator will run that ceremony on their trusted workstation;
+the backup waiver does not waive the two-custodian procedure.
 
 ## Before Adoption
 
@@ -18,8 +34,9 @@ data without explicit authorization.
    prerequisites. Schema `4` alone does not prove that the selected optional
    catalog is installed. Do not substitute a moving branch.
 3. Check that the target release explicitly permits the optional packages and
-   has matching migration instructions. Current staged exclusions are a stop
-   condition. Stable adoption requires a reviewed exact signed platform tag and
+   has matching migration instructions. Staged exclusions are a stop condition
+   for stable adoption; only the scoped alpha evaluation above is authorized
+   before stable eligibility. Stable adoption requires a reviewed exact signed platform tag and
    the compatibility checks in [Supported Upgrades](upgrades.md).
 4. Review the canonical hostname, approved private tunnel, local port `443`
    binding, browser trust, Pod DNS, Keycloak resolution, and egress. Exact
@@ -62,6 +79,13 @@ The secret stage delivers `forgejo-runtime` in `forgejo`,
 OpenBao stores. Runtime mounts exclude the init-only OIDC and initial admin
 credentials. Never print Secret values or place them in Git, rendered manifests,
 scripts, shell arguments, logs, tickets, or chat.
+
+Operations PostgreSQL chart `1.2.1` reads the optional provisioning password
+directly from `forgejo-postgres-values:password`. Its `values.yaml` key still
+triggers and validates provisioning. Enabling Forgejo leaves the shared database
+Pod template and watched Secret unchanged; it does not intentionally restart
+PostgreSQL. The job still reapplies the existing role/grant contract and adds
+the Forgejo database, so this does not waive the backup requirement.
 
 ## Staged Activation
 

@@ -81,6 +81,11 @@ consumer. Tooling copies `forgejo/internal:dbPassword` to
 released or deployed. Once adopted, Forgejo joins the complete shared-instance
 backup and recovery domain and also requires its own PVC and durable secrets.
 
+Starting with operations chart `1.2.1`, the provisioning Job reads the dedicated
+Secret's `password` key directly. Forgejo's password is not added to the shared
+database Secret watched by Reloader, so selecting Forgejo does not itself change
+the StatefulSet or trigger a password-driven restart of the shared service.
+
 ## Provisioning
 
 Finite post-install and post-upgrade Jobs reconcile roles, databases, grants,
