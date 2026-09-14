@@ -19,17 +19,17 @@ forward transition between exact stable SemVer tags, including skipped
 versions. Alpha promotion remains limited to exact commits listed by the target
 release.
 
-The latest published release, `v0.3.3`, declares `stableUpgrade: supported`, no
-alpha source revisions, unsupported downgrades, and forward-fix recovery. Its
-migration document requires canonical access-group alignment and describes
-targeted cleanup for unused development realms after configuration is aligned; see
-[Current Support](upgrades.md#current-support). Publication does not establish
-live client adoption. Do not rewrite older published contracts to match it.
+The latest published release is `v0.3.5` (2026-09-10). It declares
+`stableUpgrade: supported`, no alpha source revisions, unsupported downgrades,
+and forward-fix recovery. Publication does not establish live client adoption.
+See [Current Support](upgrades.md#current-support); published contracts remain
+immutable.
 
-`v0.3.4` preparation is merged in Base PR #95 at
-`5a84fb47adf8551994296228ee8676a58ccb5667`: MCP TLS, LibreChat agent permissions,
-and Studio `0.8.0`. See `release/migrations/v0.3.4.md`. Signing and publication
-remain operator-run; the latest published release is still `v0.3.3`.
+`v0.3.6` preparation is merged in [Base PR #110](https://github.com/neurwerk/k8s_stack_base/pull/110)
+at `da27cd98e09874c3d3f89fc074e964e226d6773e`. It includes streaming/MCP fixes,
+Studio `0.9.0`, and Keycloak theme `0.1.2`. Release checks and candidate client
+renders passed. Signing, publication, and live checks are operator-owned; no
+client pin has changed. Keep Base `main` at this release commit until publication.
 
 Every platform release supports installation into a verified empty or
 replacement environment; fresh installation is not a release-specific
