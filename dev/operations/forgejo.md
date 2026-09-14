@@ -192,6 +192,9 @@ the Forgejo database, so this does not waive the backup requirement.
 
 ## Staged Activation
 
+The following activation procedure is separate from the representation-only
+OIDC values change described below.
+
 Use separate reviewed changes and readiness checkpoints after adoption is
 authorized. The selector and the application Flux suspension are distinct gates.
 This sequence is for initial activation, not a shutdown or restore procedure for
@@ -229,6 +232,34 @@ an already-running service.
 An optional public Gateway is a separate decision. Private mode remains the
 default. Do not enable public routing as a workaround for a broken private
 tunnel, issuer trust, or secret dependency.
+
+## Quoted OIDC Values
+
+Base [PR #133](https://github.com/neurwerk/k8s_stack_base/pull/133), commit
+`90d6ce6342375520ee1bd644aa24d8013ee1d96f`, makes `forgejo-oidc-values` deliver raw
+`oidcClientSecret` for the registration Job and quoted `values.yaml` for Helm's
+rotation trigger. The consumer no longer uses `targetPath`. Both outputs use the
+unchanged source field and existing Secret identity; no credential rotation,
+image change, database migration, or OpenBao operation is required.
+
+The operator approved one coordinated early-alpha rollout rather than a separate
+producer-first migration, accepting a temporary retry while ESO synchronized.
+Verification on 2026-09-14 confirmed:
+
+- The source and both Forgejo Kustomizations applied the commit; the generation-2
+  ExternalSecret and OIDC HelmRelease were Ready with matching synchronization.
+- All 51 HelmReleases and 10 Kustomizations were Ready. Forgejo and operations
+  PostgreSQL retained their Pod identities and zero runtime restarts; the Forgejo
+  PVC remained Bound, Ceph was healthy, and both logging pipeline components were Ready.
+- Canonical TLS verification passed: `/` and `/api/healthz` returned 200, the
+  Keycloak redirect had the expected issuer/callback, and its login page returned 200.
+- The existing successful OIDC hook did not rerun. No full authenticated SSO,
+  credential extraction, test-account creation, or repository mutation was performed.
+- A transient dependency wait cleared without forced reconciliation. No new
+  warning events appeared; pre-existing PostgreSQL permission errors remained
+  visible before and after the change and were not treated as resolved.
+
+Stable clients remain unchanged until their later release bump and adoption.
 
 ## Acceptance Checks
 

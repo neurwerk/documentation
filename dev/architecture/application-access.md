@@ -164,7 +164,8 @@ mise exec -- uv run --offline --frozen python scripts/check_client_application_a
 Supported clients integrate this into ordinary `make check` and `Required CI`:
 
 - `config/application-access-checker-revision` pins the checker to one full merged
-  Base commit, currently `70bf2955dbd5d52b9ce2d74a5e52a557e4610eec` for the initial integration.
+  Base commit. The initial integration used `70bf2955dbd5d52b9ce2d74a5e52a557e4610eec`;
+  the alpha integration uses `90d6ce6342375520ee1bd644aa24d8013ee1d96f` for quoted Forgejo values.
 - `.ci/application-access-checker` holds that disposable tooling checkout.
 - `.ci/application-access-platform` independently holds the selected runtime
   platform, derived from the client's existing source selector.
@@ -185,25 +186,25 @@ proof of the revision currently running in a cluster.
 Missing or unsupported value sources remain unknown. A selected, uniquely owned
 ExternalSecret can establish a finite declared write scope only through the
 supported strict quoted-YAML producer form; all its values remain opaque.
+Static sibling output keys may contain only whole raw-field expressions for
+direct workload consumers; they do not contribute to the referenced Helm values.
 The adapter never reads Secret values and does not verify actual synchronization
 or tampering. Apply-suppressed declarations, unclassified alternate routes,
 callback mismatches, and unsupported composition fail rather than imply safety.
 
-### Forgejo Integration Gate
+### Forgejo Quoted Values
 
-The current optional Forgejo OIDC release uses an opaque Secret `targetPath`.
-Helm assignment text can affect sibling settings, so a target path alone does not
-prove the input's write scope. The adapter rejects this form, including apparently
-disjoint paths. A client selecting that release cannot yet merge the mandatory
-check integration; its draft must retain the failing gate.
+[Base PR #133](https://github.com/neurwerk/k8s_stack_base/pull/133) replaces the
+opaque Secret `targetPath` with quoted `values.yaml`. The registration Job still
+uses the raw `oidcClientSecret` key; both outputs come from the same existing
+source. The adapter continues to reject opaque `targetPath` inputs rather than
+assuming they cannot affect sibling settings.
 
-[Base issue #126](https://github.com/neurwerk/k8s_stack_base/issues/126) tracks a
-coordinated producer/consumer change to quoted YAML values. It requires separate
-approval before changing alpha runtime inputs, preserves existing credentials
-and identity, and must be verified without inspecting Secret values. Do not skip
-validation or change device grants to conceal this blocker. Overall adapter and
-client adoption work remains tracked in
-[issue #123](https://github.com/neurwerk/k8s_stack_base/issues/123).
+The operator authorized a single coordinated early-alpha rollout, accepting a
+brief reconciliation retry while the new key arrived. Alpha convergence and
+non-mutating HTTPS/authentication-path checks passed; see
+[Forgejo rollout evidence](../operations/forgejo.md#quoted-oidc-values).
+Stable runtime adoption remains deferred to a later reviewed release bump.
 
 ## DNS and Certificates
 
@@ -237,8 +238,9 @@ and internal resolver integration remain open prerequisites. Node-origin traffic
 and administrative forwarding require particular review; client-side WireGuard
 routes alone are not server-side authorization.
 
-No deployment follows from checker success or a merge. An alpha client follows
-Base `main`, so this slice changes no reconciled inputs. A stable client stays on its
-selected signed platform release, with no Forgejo adoption. Follow
+No deployment permission follows from checker success or a merge alone. The
+initial checker/client integration changed no reconciled inputs; the later
+quoted-values change had explicit alpha rollout authorization. A stable client
+stays on its selected signed platform release, with no Forgejo adoption. Follow
 [upgrade gates](../operations/upgrades.md) and obtain separate authorization for
 network changes, deployments, signed publication, and adoption.
