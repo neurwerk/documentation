@@ -2,13 +2,15 @@
 
 The platform is introducing consistent human-client access profiles without
 changing canonical application identities or the existing network boundaries.
-The first implementation is an offline plan validator in Base, not a deployment
-control. No chart, Flux input, firewall, DNS service, or device enrollment consumes
-the plan format yet.
+The implementation consists of an offline plan validator and a bounded local
+composition adapter in Base, not deployment controls. No chart, Flux input,
+firewall, DNS service, or device enrollment consumes the policy format yet.
 
 The offline checker was merged in
-[Base PR #124](https://github.com/neurwerk/k8s_stack_base/pull/124). It is available
-from Base `main`, not yet from an adopted stable platform release.
+[Base PR #124](https://github.com/neurwerk/k8s_stack_base/pull/124); the composition
+adapter was merged in [Base PR #127](https://github.com/neurwerk/k8s_stack_base/pull/127).
+They are available from Base `main`. Clients can pin this validation tooling
+independently without changing their selected stable runtime platform.
 
 Track implementation and approvals in
 [Base parent issue](https://github.com/neurwerk/k8s_stack_base/issues/121).
@@ -127,17 +129,81 @@ types, duplicate YAML keys, aliases/merge keys, and explicit tags are rejected.
 Diagnostics do not print supplied values or YAML excerpts.
 
 This input is a normalized planning document, not Helm values or a Kubernetes
-resource. A human currently supplies reviewed endpoint, feature, and grant facts.
-The [effective-values adapter](https://github.com/neurwerk/k8s_stack_base/issues/123)
-must later derive these from selected client/platform composition, respect value
-precedence, and detect unclassified endpoints and effective file-storage overrides.
-The checker does not authenticate device IDs or establish whether logical endpoints
-share a physical origin.
+resource. A human can supply reviewed endpoint, feature, and grant facts, or use
+the adapter below. The standalone checker does not authenticate device IDs or
+establish whether logical endpoints share a physical origin.
 
 A successful result says `Access plan valid; planning only. Runtime enforcement/DNS
 not verified.` It cannot establish that a real client is fully classified or secure.
 Do not add these planning fields to reconciled values before supported enforcement
 and migration validation exist.
+
+## Selected Client Values
+
+`scripts/check_client_application_access.py` reads local client and selected Base
+checkouts. It derives endpoint selection, optional browser workflows, canonical
+origins, callback paths and realms, certificate selection, and Pod routing from
+the supported Kustomize/Flux composition and ordered HelmRelease value sources.
+It then calls the normalized validator. The full supported subset is documented
+in Base's README; this is not a general Helm or Kustomize interpreter.
+
+The client owns `config/application-access.yaml`, containing only `access` and
+`endpoints`. Endpoint entries contain optional `level` and `devices` fields.
+Every derived endpoint must be classified, and stale/unselected entries fail.
+Do not duplicate hostnames, feature flags, certificates, or routing in this file.
+It must remain outside ConfigMap generators and all reconciled runtime inputs.
+
+Run from the checker checkout:
+
+```bash
+mise exec -- uv run --offline --frozen python scripts/check_client_application_access.py \
+  --client-root /path/to/client --platform-root /path/to/selected-platform \
+  --cluster prod-eu-1
+```
+
+Supported clients integrate this into ordinary `make check` and `Required CI`:
+
+- `config/application-access-checker-revision` pins the checker to one full merged
+  Base commit, currently `70bf2955dbd5d52b9ce2d74a5e52a557e4610eec` for the initial integration.
+- `.ci/application-access-checker` holds that disposable tooling checkout.
+- `.ci/application-access-platform` independently holds the selected runtime
+  platform, derived from the client's existing source selector.
+- Explicit `APPLICATION_ACCESS_CHECKER_WORKTREE` and
+  `APPLICATION_ACCESS_PLATFORM_WORKTREE` paths support local candidate work.
+  A checker override is reported as a candidate, not as pinned validation.
+- Do not reuse `BASE_WORKTREE`: existing tests reserve it for candidate platform
+  authorization checks. Protected Platform Compatibility workflows are unchanged.
+
+Checkout preparation may access GitHub; the adapter never fetches or contacts a
+cluster. It reports checker, platform, and client revisions separately. Consumed
+platform files must match regular committed blobs at the selected local ref;
+modified or uncommitted consumed client inputs are reported as candidates.
+Git inspection avoids filters, external helpers, and lazy fetching. Source
+identity and local commit matching are not release-signature verification or
+proof of the revision currently running in a cluster.
+
+Missing or unsupported value sources remain unknown. A selected, uniquely owned
+ExternalSecret can establish a finite declared write scope only through the
+supported strict quoted-YAML producer form; all its values remain opaque.
+The adapter never reads Secret values and does not verify actual synchronization
+or tampering. Apply-suppressed declarations, unclassified alternate routes,
+callback mismatches, and unsupported composition fail rather than imply safety.
+
+### Forgejo Integration Gate
+
+The current optional Forgejo OIDC release uses an opaque Secret `targetPath`.
+Helm assignment text can affect sibling settings, so a target path alone does not
+prove the input's write scope. The adapter rejects this form, including apparently
+disjoint paths. A client selecting that release cannot yet merge the mandatory
+check integration; its draft must retain the failing gate.
+
+[Base issue #126](https://github.com/neurwerk/k8s_stack_base/issues/126) tracks a
+coordinated producer/consumer change to quoted YAML values. It requires separate
+approval before changing alpha runtime inputs, preserves existing credentials
+and identity, and must be verified without inspecting Secret values. Do not skip
+validation or change device grants to conceal this blocker. Overall adapter and
+client adoption work remains tracked in
+[issue #123](https://github.com/neurwerk/k8s_stack_base/issues/123).
 
 ## DNS and Certificates
 
