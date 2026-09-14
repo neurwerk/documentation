@@ -77,8 +77,8 @@ Service connection uses `5432`, targeting Pod port `9712`, under the same
 operations-only plaintext/SCRAM exception. It is not another DocumentDB gateway
 consumer. Tooling copies `forgejo/internal:dbPassword` to
 `infra-postgres-operations/internal:forgejoPassword`; the separate
-`forgejo-postgres-values` Secret supplies provisioning. This package is not yet
-released or deployed. Once adopted, Forgejo joins the complete shared-instance
+`forgejo-postgres-values` Secret supplies provisioning. This package is running
+in authorized private alpha, not yet in a stable release. Forgejo joins the complete shared-instance
 backup and recovery domain and also requires its own PVC and durable secrets.
 
 Starting with operations chart `1.2.1`, the provisioning Job reads the dedicated

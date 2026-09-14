@@ -6,14 +6,17 @@ and credentials. It is not an AgentGateway-protected application.
 
 ## Status And Scope
 
-As of 2026-09-14, the implementation is merged in Base
-[PR #113](https://github.com/neurwerk/k8s_stack_base/pull/113), at commit
-`d2ebc87361ec575d38d0b803f9a182fc626ddedd`, and Tooling
+As of 2026-09-14, private alpha is running from Base commit
+`efe2a4b23b7ed0001fca68cfa7fe06bd5fe63bd9`, including
+[PR #113](https://github.com/neurwerk/k8s_stack_base/pull/113), the database
+onboarding fix in [PR #115](https://github.com/neurwerk/k8s_stack_base/pull/115),
+and the Keycloak readback fix in
+[PR #117](https://github.com/neurwerk/k8s_stack_base/pull/117), with Tooling
 [PR #30](https://github.com/neurwerk/k8s_stack_tooling/pull/30).
 The source is available on alpha `main`, but the platform manifest still
 excludes the Forgejo packages and image from stable release eligibility.
-The prepared client has the selector disabled and all four optional Flux stages
-suspended. This is not a deployed service.
+The authorized client has all four Forgejo stages active. It exposes only a
+ClusterIP Service; workstation browser access still requires a private tunnel.
 
 Adoption requires selection-gated `openbao-stack-setup` `0.2.12`, still using
 reconciliation schema `4`, from immutable tooling commit
@@ -23,11 +26,15 @@ The implementation includes role selection, restricted OIDC scopes,
 and optional issuer CA trust. Check the reviewed implementation and release
 contract against the [rollout gates](../operations/forgejo.md#before-adoption).
 
-Local Base validation passed 76 chart tests, 10 security tests, 16 platform tests,
+Local Base validation passed 78 chart tests, 10 security tests, 16 platform tests,
 and four embedded JavaScript tests; two tag-only tests were skipped. Tooling's
 credential suite passed 241 tests, and the cross-repository client rendering
-checks passed. Required PR CI was green before merging. Actual-image, database,
-SSO, Git, and recovery acceptance still require an authorized environment.
+checks passed. Required PR CI was green before merging. Live private TLS, SSO
+role admission/denial, HTTPS/SSH Git, LFS protocol transfer, and restart persistence
+passed with operator-approved synthetic test accounts and content. Test accounts,
+repositories, tokens, SSH keys, helper resources and forwards were removed.
+Public-mode, rotation, outage and full-recovery tests remain unverified; see the
+[verified alpha results](../operations/forgejo.md#verified-alpha-results).
 
 There is no existing-repository migration, runner deployment, or runner
 credential provisioning in this integration. Do not infer support for importing
@@ -84,8 +91,8 @@ Keycloak issuer's resolution.
 For Keycloak, `canonicalEndpointRouting.mode: internal-traefik` permits the
 reviewed Traefik HTTPS path. `public-dns` instead requires reviewed individual
 Keycloak destination `/32` or `/128` addresses in
-`forgejo.networkPolicy.keycloakPublicCidrs`. These addresses remain unresolved
-rollout inputs; do not substitute general internet egress or blindly change the
+`forgejo.networkPolicy.keycloakPublicCidrs`. These addresses must match the
+reviewed client Pod resolver; do not substitute general internet egress or blindly change the
 shared routing mode. NetworkPolicy enforces peers and ports, not hostnames on a
 shared IP. Cluster DNS or reachability checks require separate authorization.
 

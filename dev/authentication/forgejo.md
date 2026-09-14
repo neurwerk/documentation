@@ -1,8 +1,9 @@
 # Forgejo Authentication
 
 Forgejo uses Keycloak for human OIDC sign-in and its own native sessions,
-repository permissions, API tokens, and SSH keys afterward. This staged
-integration is not yet released or runtime-verified; see
+repository permissions, API tokens, and SSH keys afterward. Private-alpha SSO
+admission and native permissions are runtime-verified, but this is not yet a
+stable platform release; see
 [status and scope](../architecture/forgejo.md#status-and-scope).
 
 ## Human Sign-In

@@ -40,14 +40,54 @@ the backup waiver does not waive the two-custodian procedure.
    the compatibility checks in [Supported Upgrades](upgrades.md).
 4. Review the canonical hostname, approved private tunnel, local port `443`
    binding, browser trust, Pod DNS, Keycloak resolution, and egress. Exact
-   Keycloak public IP CIDRs remain a required unresolved input if `public-dns`
-   is selected. Do not change the shared routing mode merely to route Forgejo.
+   Keycloak public IP CIDRs require verification against the Pod resolver if
+   `public-dns` is selected. Do not change the shared routing mode merely to route Forgejo.
 5. Verify backup and recovery arrangements for the complete operations database
    instance, Forgejo PVC, and durable credentials. Establish approved custody for
    the recovery password. Do not assume an existing target is empty.
 
-The required real-image, database, Keycloak, Git, and recovery acceptance evidence
-is not yet available. Static tests and a registry digest do not replace it.
+Private runtime acceptance is recorded below. Public-mode, rotation, outage,
+and full-recovery acceptance are not established by those results.
+
+## Verified Alpha Results
+
+On 2026-09-14, the operator completed credential reconciliation and authorized
+temporary test accounts, repositories, and keys. The following checks passed:
+
+- All Flux sources/stages and Helm releases Ready, with the exact pinned image.
+- Production cert-manager certificate Ready and canonical hostname/chain verified
+  through a loopback-bound test forward without disabling TLS verification.
+- Keycloak normal-user and Forgejo-admin admission, with correct native admin
+  status; a no-role user was denied and no native account was created for it.
+- Private repository creation and anonymous denial; HTTPS Git push/clone and
+  SSH fetch/push with an independently obtained, pinned public SSH host key.
+- LFS batch upload/download with matching synthetic content and a committed
+  Git LFS pointer; the standalone `git-lfs` client was not exercised.
+- A Forgejo-only restart preserved Git history, LFS content, native account and
+  token access, and the SSH host identity.
+- The canonical Pod DNS name resolved to the Forgejo Service. A distinct
+  unapproved Pod with explicit egress to Forgejo could not reach web or SSH.
+- Cleanup removed all synthetic Keycloak/native users, repositories, tokens,
+  SSH keys, test helpers and forwards. Database metadata checks found no
+  remaining test users, repositories, tokens, or SSH keys.
+- The shared operations PostgreSQL Pod remained unchanged with zero restarts;
+  Ceph reported HEALTH_OK and the logging pipeline remained Ready.
+
+Initial certificate-mount and startup-probe warnings cleared during startup.
+The final runtime log check found no error or fatal entries. Keycloak mapper
+readback required chart `0.1.1`: the server omits an empty role prefix and adds
+defaults, so the verifier now normalizes only that empty value and explicitly
+disables the introspection claim without relaxing other checks.
+
+Tests used an HTTP client with canonical TLS identities and private forwards,
+not a visual desktop/mobile browser check. The user's workstation still needs
+its own canonical-hostname tunnel. The operator-selected existing account's
+explicit Forgejo admin membership and both effective Forgejo roles were verified;
+its prior declared groups remained present, with no pending account actions.
+This is not automatic platform-admin inheritance. No backup or full restore was
+performed under the scoped waiver;
+public mode, credential/certificate rotation, and outage/offboarding drills
+remain separate checks.
 
 ## Secret Contract
 
