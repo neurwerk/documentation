@@ -2,8 +2,9 @@
 
 Status: images published and configuration merged to base `main` in
 [PR #104](https://github.com/neurwerk/k8s_stack_base/pull/104), commit `b272ed0`.
-Available to alpha clients; running-cluster and application health are not yet
-verified. Existing platform tags are unchanged.
+Available to alpha clients and in signed
+[platform v0.3.6](https://github.com/neurwerk/k8s_stack_base/releases/tag/v0.3.6).
+Runtime and application checks remain separate from release publication.
 
 - [API-key bridge 0.6.0](https://github.com/neurwerk/k8s_stack_keycloak_api_key_bridge/releases/tag/v0.6.0)
 - [agentgateway_extproc 0.7.0](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/releases/tag/v0.7.0)
@@ -74,8 +75,8 @@ These checks do not certify real clients, JWT recovery, PII Engine, or deploymen
 
 This is approved as one development update using the existing release
 dependencies: bridge, gateway, then extProc. Live verification remains tracked in
-[issue #103](https://github.com/neurwerk/k8s_stack_base/issues/103). Adoption by
-clients on existing platform tags is deferred.
+[issue #103](https://github.com/neurwerk/k8s_stack_base/issues/103). Tag-pinned
+clients adopt through a separate reviewed client PR.
 
 [Issue #108](https://github.com/neurwerk/k8s_stack_base/issues/108) tracks a separate
 limitation: a late extProc failure can look like a normally completed response.

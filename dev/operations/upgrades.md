@@ -9,7 +9,7 @@ Kubernetes control-plane changes.
 
 ## Current Support
 
-The latest published platform release is `v0.3.5` (2026-09-10).
+The latest published platform release is `v0.3.6` (2026-09-14).
 
 | Target | Contract | Stable upgrade sources | Alpha promotion | Downgrade |
 | --- | --- | --- | --- | --- |
@@ -19,12 +19,13 @@ The latest published platform release is `v0.3.5` (2026-09-10).
 | `v0.3.3` | `stableUpgrade: supported` | Any strictly lower exact stable SemVer tag, subject to migration review | None | Unsupported |
 | `v0.3.4` | `stableUpgrade: supported` | Any strictly lower exact stable SemVer tag, subject to migration review | None | Unsupported |
 | `v0.3.5` | `stableUpgrade: supported` | Any strictly lower exact stable SemVer tag, subject to migration review | None | Unsupported |
+| `v0.3.6` | `stableUpgrade: supported` | Any strictly lower exact stable SemVer tag, subject to migration review | None | Unsupported |
 
-`v0.3.6` is prepared in [Base PR #110](https://github.com/neurwerk/k8s_stack_base/pull/110),
-not published. It retains this compatibility policy. Its upgrade notes require
+[Platform v0.3.6](https://github.com/neurwerk/k8s_stack_base/releases/tag/v0.3.6)
+is published and retains this compatibility policy. Its upgrade notes require
 MCP clients to reconnect without session IDs and administrators to obtain fresh
-tokens after event-read access is provisioned. The operator performs publication
-and live checks; client adoption waits for the verified signed release.
+tokens after event-read access is provisioned. The operator performs live checks;
+each client adoption must pass the signed-release compatibility check before merge.
 
 The published contracts are immutable. The historical `v0.1.0` and `v0.1.1`
 targets permit no in-place stable upgrade; `v0.1.1` permits promotion only from

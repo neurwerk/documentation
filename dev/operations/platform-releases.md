@@ -19,17 +19,18 @@ forward transition between exact stable SemVer tags, including skipped
 versions. Alpha promotion remains limited to exact commits listed by the target
 release.
 
-The latest published release is `v0.3.5` (2026-09-10). It declares
+The latest published release is `v0.3.6` (2026-09-14). It declares
 `stableUpgrade: supported`, no alpha source revisions, unsupported downgrades,
 and forward-fix recovery. Publication does not establish live client adoption.
 See [Current Support](upgrades.md#current-support); published contracts remain
 immutable.
 
-`v0.3.6` preparation is merged in [Base PR #110](https://github.com/neurwerk/k8s_stack_base/pull/110)
-at `da27cd98e09874c3d3f89fc074e964e226d6773e`. It includes streaming/MCP fixes,
-Studio `0.9.0`, and Keycloak theme `0.1.2`. Release checks and candidate client
-renders passed. Signing, publication, and live checks are operator-owned; no
-client pin has changed. Keep Base `main` at this release commit until publication.
+[Platform v0.3.6](https://github.com/neurwerk/k8s_stack_base/releases/tag/v0.3.6)
+is published at `da27cd98e09874c3d3f89fc074e964e226d6773e`, prepared by
+[Base PR #110](https://github.com/neurwerk/k8s_stack_base/pull/110). It includes
+streaming/MCP fixes, Studio `0.9.0`, and Keycloak theme `0.1.2`. The approved SSH
+signature and publication identity artifact were verified. Client adoption uses
+a separate reviewed PR; live checks remain operator-owned.
 
 Every platform release supports installation into a verified empty or
 replacement environment; fresh installation is not a release-specific
