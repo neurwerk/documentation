@@ -2,9 +2,10 @@
 
 The platform is introducing consistent human-client access profiles without
 changing canonical application identities or the existing network boundaries.
-The implementation consists of an offline plan validator and a bounded local
-composition adapter in Base, not deployment controls. No chart, Flux input,
-firewall, DNS service, or device enrollment consumes the policy format yet.
+The planning implementation consists of an offline plan validator and a bounded
+local composition adapter in Base. The separate optional static WireGuard chart
+uses explicit operator values, not that planning format; no automatic device
+enrollment or policy controller consumes the plan.
 
 The offline checker was merged in
 [Base PR #124](https://github.com/neurwerk/k8s_stack_base/pull/124); the composition
@@ -258,9 +259,10 @@ additive, so this is not a subtractive restriction on existing consumers.
 
 This is a bounded prerequisite, not the reusable WireGuard gateway implementation
 or proof of restricted access. No platform or client peers are selected. The
-gateway still needs default-deny inner traffic, per-device authorization before
-SNAT, bounded active-flow revocation and stale-policy handling, safe Service
-address lifecycle, least-privilege execution, and exact egress rules. Live
+separate static gateway now provides default-deny inner traffic, device checks
+before SNAT and exact Forgejo egress. Permission changes use manual stop/update/start,
+not automatic expiry or bounded revocation. Operators stop before Service
+recreation and recover with no peers if the approved list is untrusted. Live
 acceptance must verify the CNI-visible gateway Pod identity and absence of
 alternate entrances; never compensate for node-source translation with broad
 node allowances. Gateway activation, DNS, enrollment and outer-network forwarding
@@ -271,3 +273,20 @@ prerequisite is available in Base `main` for alpha source consumption, not in th
 selected stable release. Required CI, full local checks and independent review
 passed; default disabled, private and public renders were byte-for-byte unchanged.
 No gateway deployment or live-policy verification was performed.
+
+### Static Gateway
+
+Base [PR #141](https://github.com/neurwerk/k8s_stack_base/pull/141) merged as
+`763c55e0079a5ee24b9eaed0f92a2ff946c96ef5`. The optional `wireguard` chart defaults
+disabled, with zero replicas and
+an empty peer list. It implements the one-Mac, Forgejo-HTTPS pilot with a pinned
+WireGuard image, static nftables rules installed before tunnel startup, no
+management UI or Kubernetes API access, and no automatic Service discovery.
+It preserves end-to-end native Forgejo TLS and canonical identity. The gateway
+references a namespace-local server-key Secret; persistent delivery through
+OpenBao/ESO and real network values remain activation prerequisites.
+
+Both gateway packages are outside default stages and excluded from stable
+eligibility. Source availability does not imply client adoption or packet-path
+acceptance. See [Static WireGuard Pilot](../operations/wireguard.md) for the
+implemented runtime, manual stop/update/start, empty-list recovery and live gates.

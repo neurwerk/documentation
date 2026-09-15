@@ -93,6 +93,7 @@ namespace-local Kubernetes Secrets used at runtime.
 - [Routing](routing.md)
 - [Network isolation](networking.md)
 - [Application access planning](application-access.md)
+- [Static WireGuard pilot operations](../operations/wireguard.md)
 - [Canonical endpoint DNS routing](split-horizon-dns.md)
 - [Shared PostgreSQL](postgresql.md)
 - [Forgejo (staged optional integration)](forgejo.md)
