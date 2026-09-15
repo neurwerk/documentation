@@ -244,3 +244,30 @@ quoted-values change had explicit alpha rollout authorization. A stable client
 stays on its selected signed platform release, with no Forgejo adoption. Follow
 [upgrade gates](../operations/upgrades.md) and obtain separate authorization for
 network changes, deployments, signed publication, and adoption.
+
+### Private HTTPS Prerequisite
+
+Base [PR #137](https://github.com/neurwerk/k8s_stack_base/pull/137), closing issue
+[#136](https://github.com/neurwerk/k8s_stack_base/issues/136), adds the
+destination-side `forgejo.networkPolicy.httpsClients` allowance, default `[]`.
+It selects an exact namespace and nonempty Pod-label map together and admits only
+native HTTPS on Pod TCP `3000` behind Service TCP `443`, not SSH `2222`.
+Nonempty selection with the public Forgejo Gateway fails rendering. Existing
+web-and-SSH `clients` remain separate and unchanged; overlapping rules are
+additive, so this is not a subtractive restriction on existing consumers.
+
+This is a bounded prerequisite, not the reusable WireGuard gateway implementation
+or proof of restricted access. No platform or client peers are selected. The
+gateway still needs default-deny inner traffic, per-device authorization before
+SNAT, bounded active-flow revocation and stale-policy handling, safe Service
+address lifecycle, least-privilege execution, and exact egress rules. Live
+acceptance must verify the CNI-visible gateway Pod identity and absence of
+alternate entrances; never compensate for node-source translation with broad
+node allowances. Gateway activation, DNS, enrollment and outer-network forwarding
+remain gated on reviewed facts and explicit operational scope.
+
+Merged on 2026-09-15 as `dc59d300bf79b6fb0e82c3df27a2d3c45bab262f`, this
+prerequisite is available in Base `main` for alpha source consumption, not in the
+selected stable release. Required CI, full local checks and independent review
+passed; default disabled, private and public renders were byte-for-byte unchanged.
+No gateway deployment or live-policy verification was performed.

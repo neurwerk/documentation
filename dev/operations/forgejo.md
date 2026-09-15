@@ -263,6 +263,17 @@ Stable clients remain unchanged until their later release bump and adoption.
 
 ## Acceptance Checks
 
+Before adopting a private HTTPS-only peer through
+`forgejo.networkPolicy.httpsClients`, keep the public Gateway disabled and review
+all additive ingress policies and existing `clients` for overlapping SSH grants.
+Verify the real source Pod identity after NAT and the consumer's matching egress
+rule; the new destination allowance alone does not establish a safe tunnel.
+Under explicit operational authorization, test HTTPS through Service `443` with
+canonical TLS verification, denial of SSH `2222` and unrelated sources, and no
+public or ordinary-network bypass. Gateway device revocation, active-flow closure,
+failure recovery and DNS remain separate acceptance gates, not claims of this
+offline chart change.
+
 After explicit rollout authorization, confirm the Kubernetes context and inspect
 Flux sources, Kustomizations, both Forgejo-related HelmReleases, warning events,
 Certificate and approval conditions, affected Pods, and sanitized logs. Require

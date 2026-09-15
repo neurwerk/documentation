@@ -83,6 +83,14 @@ Internal consumers need explicit namespace and Pod selectors in
 `forgejo.networkPolicy.clients`; the default list is empty. Switch internal web
 consumers consistently when changing transport mode.
 
+For private HTTPS-only consumers, `forgejo.networkPolicy.httpsClients` defaults
+to `[]` and uses the same exact namespace plus nonempty Pod-label map shape.
+It admits only Pod TCP `3000` behind Service TCP `443`; nonempty selection with
+`externalGateway.enabled: true` fails rendering. This does not remove SSH from
+existing `clients`, override other additive NetworkPolicies, or provide device
+authorization. No gateway is installed or selected by this prerequisite; see
+[application access](application-access.md#private-https-prerequisite).
+
 For private browser access, an approved workstation tunnel must actually bind
 local port `443`, and workstation resolution must direct the canonical hostname
 to that listener. Establish this prerequisite before login. A port-forward on
