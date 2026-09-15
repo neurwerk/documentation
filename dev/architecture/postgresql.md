@@ -97,6 +97,15 @@ For DocumentDB user management, provisioning temporarily gives
 `documentdb_admin_role` authority. The Job revokes and verifies both privileges
 before it succeeds.
 
+Operations chart `1.2.2` explicitly grants the upstream
+`documentdb_bg_worker_role` `CONNECT` on `postgres` after revoking public access.
+Provisioning verifies this access and rejects worker connectivity to the managed
+application databases, including an optional database when selected. The grant
+does not add role memberships, grant public access, or change credentials.
+Without it, DocumentDB's internal jobs repeatedly fail at connection time even
+when the separate scheduled maintenance jobs and readiness probes succeed.
+Chart availability does not establish client adoption or live remediation.
+
 ## Transport and network policy
 
 | Connection | Transport |
