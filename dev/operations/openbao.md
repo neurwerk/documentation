@@ -231,6 +231,23 @@ new tool before starting the application. The exact namespace store is
 [Forgejo operations](forgejo.md#staged-activation) for sequencing, credential
 copies, and checks that avoid a database/password dependency cycle.
 
+## Optional WireGuard Catalog
+
+`openbao-stack-setup` `0.2.13` adds the static gateway's server-key catalog at
+schema `4`; use the exact Tooling revision in the selected optional Base
+package's prerequisites. `wireguard.enabled` in namespace-local
+`wireguard/wireguard-product-values` selects it, with the fixed
+`serverKeySecret: wireguard-server-key`. Missing/disabled selection does not add
+the optional role or key. This does not expand secret-operator provider access.
+
+Bootstrap/reconcile persist a missing raw-base64 X25519 key at
+`wireguard/internal:privateKey`, preserving valid existing values. After temporary
+root revocation, they converge `wireguard-openbao-secret-store` and the
+`wireguard-server-key` ExternalSecret. The Secret receives only `privateKey`.
+There is no new key-update command, device enrollment, permission controller or
+gateway activation. Follow [WireGuard setup](wireguard.md#server-key-setup) for
+staging and the separate Mac-public-key approval and stop/update/start procedure.
+
 ## Update Provider Credentials
 
 ```bash

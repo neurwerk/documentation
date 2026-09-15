@@ -160,6 +160,17 @@ private AgentGateway analytics API and receives neither this database credential
 nor direct database access. Studio also receives no Langfuse project credential
 for usage analytics; Langfuse retains its own tracing credentials and storage.
 
+## Optional WireGuard
+
+The static gateway's selected catalog uses only `wireguard/internal:privateKey`.
+`stack-setup` `0.2.13` generates a missing key on the trusted workstation during
+authorized bootstrap/reconciliation and preserves it on retry; it does not enroll
+devices or restore their historical permissions. The optional namespace-local
+ESO package delivers that one property to `wireguard-server-key`. The device
+private key stays in the Mac WireGuard app. See
+[WireGuard setup](../operations/wireguard.md#server-key-setup) for exact selection
+and readiness gates; no runtime selection follows from source availability.
+
 ## Safety Rules
 
 - Never commit secret values, credentials, private keys, recovery material, or

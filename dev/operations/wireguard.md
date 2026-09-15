@@ -30,6 +30,28 @@ platform release, image publication or client-adoption operation was performed.
 
 ## Runtime Contract
 
+### Server-Key Integration Evidence
+
+[Tooling PR #32](https://github.com/neurwerk/k8s_stack_tooling/pull/32) merged as
+`0c0d5b35fc9e68b70e0cb48f3741e1888f7a287b`; [Base PR #143](https://github.com/neurwerk/k8s_stack_base/pull/143)
+merged as `f3ad4196382da780c1ae073d845b2de221bad4e3`. Tooling's full setup-project
+checks passed: frozen lock/sync, Ruff lint/format, type checks, 244 tests with
+92.96% coverage, and source/wheel build. Its entire seven-project CI matrix and
+Required CI passed in run `34944756901`. No package or image was published.
+
+Base full checks passed with 85 chart tests, 10 security tests, 59 platform tests
+(two existing tag-only skips), four Node tests and all seven pre-commit hooks.
+Required CI run `34945436562` passed on head
+`803b491e480904948e9086c33060777ce3dd943b`, including the unchanged isolated packet
+test. Independent combined review cleared both repositories and this runbook
+after the exact optional tooling prerequisite was recorded. All three default
+stage renders remained byte-identical; no client composition was selected.
+Key tests use an in-memory OpenBao fake and deterministic WireGuard key fixture,
+not live OpenBao or operational key generation. Live ESO delivery and Mac setup
+remain unverified until an authorized operator runs them.
+
+### Gateway Runtime
+
 The independent `releases/namespaces/wireguard/` and `releases/wireguard/` packages
 are absent from default stages. Defaults are `enabled: false`, `replicas: 0`,
 and `peers: []`. The HelmRelease depends on Forgejo and reads the namespace-local
@@ -71,12 +93,12 @@ Service-address reuse must not authorize another application's Pods.
    kubelet allowance for unsafe Pod-local `net.ipv4.ip_forward`. The workload
    does not load modules or change kubelet configuration. Verify the CNI supports
    exact Pod egress/ingress for this double-NAT path before granting access.
-3. Implement approved persistent server-key delivery using the existing
+3. Provision the persistent server key using the implemented optional
    [OpenBao/ESO flow](../architecture/secrets.md), not a new recovery service.
    `wireguard.serverKeySecret` names a namespace-local Secret with `privateKey`.
-   A selection-gated provisioning catalog/SecretStore/ExternalSecret is still
-   pending; the gateway does not create or rotate credentials. Readiness of that
-   delivery stage must precede the gateway stage. Keep the Mac key on the Mac.
+   Use `wireguard-server-key` with the setup catalog described below. No live key
+   has been provisioned by source implementation; delivery readiness must precede
+   the gateway stage. Keep the Mac key on the Mac.
 4. Select Forgejo's `httpsClients` peer with namespace `wireguard` and Pod labels
    `app.kubernetes.io/name: wireguard`, `app.kubernetes.io/instance: wireguard`.
    Set Forgejo's `externalGateway.enabled: false`, remove other direct human
@@ -94,6 +116,74 @@ Service-address reuse must not authorize another application's Pods.
    no public Forgejo route. Verify actual resolution, renewal and login later.
 
 ## Manual Changes
+
+### Server-Key Setup
+
+`openbao-stack-setup` `0.2.13` extends the existing schema-4 optional catalog;
+use Tooling commit `0c0d5b35fc9e68b70e0cb48f3741e1888f7a287b`, merged in
+[Tooling PR #32](https://github.com/neurwerk/k8s_stack_tooling/pull/32) and recorded
+in Base's optional release prerequisite, not the older global prerequisite or a moving checkout. Neither
+merging source nor building the CLI package authorizes credential operations.
+
+1. With separate staging authorization, compose Base's independent namespace
+   package and `releases/wireguard/secret-sync/`, plus a client-owned
+   `wireguard-product-values` ConfigMap in namespace `wireguard`. The namespace
+   requests the existing OpenBao CA bundle; ESO uses a namespace-local store,
+   role `wireguard`, ServiceAccount `wireguard-external-secrets`, audience `openbao`.
+2. In the ConfigMap's `values.yaml`, set `wireguard.enabled: true`,
+   `wireguard.serverKeySecret: wireguard-server-key`, `wireguard.replicas: 0` and
+   `wireguard.peers: []`. These are setup selections, not permission to run the
+   gateway. Leave its HelmRelease stage unselected/suspended while actual network
+   facts are unknown; enabling its chart without those facts fails rendering.
+   Do not duplicate the selector in shared values or override it inline.
+3. Run the existing `stack-setup reconcile` ceremony from the trusted workstation
+   using explicit context/client and two approved custodian packages. Use the
+   [documented command and custody rules](openbao.md#reconcile-the-catalog).
+   This reconciles the full existing catalog, including its established
+   infrastructure side effects; it is not a WireGuard-only operation. Fresh
+   installations can select the same catalog during authorized bootstrap.
+4. The tool creates only a missing `wireguard/internal:privateKey`, using X25519
+   raw base64 and compare-and-set persistence. It validates and preserves existing
+   keys rather than rotating them; invalid values require operator investigation.
+   It never logs the key or adds peers. After revoking temporary root access it
+   waits for the store and refreshes the `wireguard-server-key` ExternalSecret.
+   ESO copies only `privateKey` to the one same-named namespace-local Secret.
+5. Verify SecretStore/ExternalSecret Ready conditions and target metadata, not
+   Secret values. The first secret-sync readiness wait may remain pending until
+   the catalog is reconciled; do not make the ceremony depend on that first wait
+   succeeding. Before application activation, make the gateway Flux stage depend
+   on the now-Ready secret-sync stage, namespace and client values. The setup tool
+   does not select or reconcile the gateway HelmRelease.
+
+An absent ConfigMap or disabled selector creates no WireGuard record, role or
+refresh; other read failures and malformed selection fail closed. Deselection
+preserves any existing key and role, and does not revoke devices. No supported
+provider-update command exposes or rotates this key. Recovery restores server
+identity separately from the current approved peers; use no peers if uncertain.
+
+### Mac Enrollment
+
+After the network/activation gates are authorized, create an empty tunnel in the
+Mac WireGuard app so the device key is generated locally. Give the operator only
+its public key and owner for the static peer entry; never export its private key
+to a ticket, repository, server or chat. Configure the reviewed device `/32`, UDP
+endpoint, virtual destination `/32` in `AllowedIPs`, MTU and scoped hostname
+mapping only after the real values are known. Do not set catch-all routes or DNS.
+
+After an authorized gateway start (an empty peer list is safe), obtain only its
+public key with the narrow command below and use it as the Mac's server peer:
+
+```bash
+kubectl --context <kube-context> -n wireguard exec deployment/wireguard -- wg show wg0 public-key
+```
+
+This command is not permission to contact the cluster now. Do not substitute
+`wg showconf`, a Secret dump or a private-key query. Use the stop/update/start
+sequence below when adding the approved Mac peer, then verify both positive
+Forgejo access and negative unrelated-route/port tests. Remove it the same way;
+application credential offboarding remains separate.
+
+### Stop Update Start
 
 1. Reconcile `wireguard.replicas: 0` through the approved client change and wait
    for every old gateway Pod to be deleted. Verify access has stopped. Do not

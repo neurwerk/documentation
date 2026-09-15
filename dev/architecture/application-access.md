@@ -283,8 +283,9 @@ an empty peer list. It implements the one-Mac, Forgejo-HTTPS pilot with a pinned
 WireGuard image, static nftables rules installed before tunnel startup, no
 management UI or Kubernetes API access, and no automatic Service discovery.
 It preserves end-to-end native Forgejo TLS and canonical identity. The gateway
-references a namespace-local server-key Secret; persistent delivery through
-OpenBao/ESO and real network values remain activation prerequisites.
+references a namespace-local server-key Secret; the optional OpenBao/ESO delivery
+contract is implemented with `stack-setup` `0.2.13`, but its authorized provisioning,
+real network values and client adoption remain activation prerequisites.
 
 Both gateway packages are outside default stages and excluded from stable
 eligibility. Source availability does not imply client adoption or packet-path
