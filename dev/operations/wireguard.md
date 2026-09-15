@@ -161,6 +161,33 @@ preserves any existing key and role, and does not revoke devices. No supported
 provider-update command exposes or rotates this key. Recovery restores server
 identity separately from the current approved peers; use no peers if uncertain.
 
+### Stopped Alpha Staging Evidence
+
+On 2026-09-15, the operator authorized a client preparation change selecting only
+the independent namespace, namespace-local values and optional secret-sync
+packages. The gateway HelmRelease stayed unselected, with `replicas: 0` and
+`peers: []` in the setup values. Base stayed at
+`f3ad4196382da780c1ae073d845b2de221bad4e3`; neither its source selector nor the
+client's immutable access-checker pin changed. Full client checks passed with
+69 tests and one existing opt-in skip, all seven hooks passed, independent review
+found no remaining defects, and hosted CI plus exact-test-merge compatibility
+passed before merging without a bypass.
+
+Automatic Flux reconciliation made the namespace and client values Ready. No
+gateway Deployment, Pod, Service or HelmRelease existed. Secret-sync remained
+NotReady: the SecretStore reported `InvalidProviderConfig` with an invalid role,
+and the ExternalSecret reported `SecretSyncedError` because its store was not
+ready. This is an expected provisioning block, not successful key delivery; no
+credential ceremony or forced reconciliation was performed to clear it.
+
+The existing 51 HelmReleases and 68 active Pods remained Ready, all 19 PVCs were
+Bound, and Ceph reported `HEALTH_OK`. Forgejo and operations PostgreSQL retained
+their Pod identities and zero restarts; Forgejo had no public Gateway or ingress
+allowance. Recent Fluent Bit/OpenSearch logs had no error- or warning-marked
+entries; raw application log content and credential values were not disclosed.
+This verifies stopped preparation only, not browser login, file transfers,
+end-to-end UDP, live CNI/NAT policy, Mac enrollment, DNS or activation acceptance.
+
 ### Mac Enrollment
 
 After the network/activation gates are authorized, create an empty tunnel in the
