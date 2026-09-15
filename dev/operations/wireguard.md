@@ -2,8 +2,8 @@
 
 Base's optional `charts/wireguard/` gateway implements a static one-device,
 Forgejo-HTTPS-only pilot. Source availability is not deployment acceptance.
-No active client selects this package, and it remains excluded from stable
-release eligibility. Do not contact clusters, change DNS/firewalls, or provision
+An authorized alpha client now selects this package; it remains excluded from
+stable release eligibility. Do not contact clusters, change DNS/firewalls, or provision
 keys without separate authorization. The user executes EC2 changes with our help;
 agents do not SSH to EC2.
 
@@ -188,7 +188,7 @@ entries; raw application log content and credential values were not disclosed.
 This verifies stopped preparation only, not browser login, file transfers,
 end-to-end UDP, live CNI/NAT policy, Mac enrollment, DNS or activation acceptance.
 
-### Activation Validation Blocker
+### Checker Prerequisite
 
 On 2026-09-15, after the operator reported completing the approved catalog
 ceremony, read-only inspection confirmed the WireGuard SecretStore Ready/Valid,
@@ -207,10 +207,37 @@ it. Independent review reproduced the failure and confirmed that no supported
 client setting can extend the hard-coded chart catalog. A reviewed Base checker
 prerequisite and subsequent immutable client checker pin are required; do not
 skip the check, conceal the selected HelmRelease or suspend it to bypass validation.
-This prerequisite exceeds the requested single client activation PR, so activation
-remains stopped pending approval of that additional scope. Runtime Base selection,
-keys, public applications and stable clients remain unchanged. The Mac resolver
-procedure below is prepared, not a claim of tested Mac resolution or enrollment.
+The user authorized that narrow prerequisite. [Base PR #147](https://github.com/neurwerk/k8s_stack_base/pull/147)
+merged as `a6b325f9f1425a3c315462b31ff058c68a9c6de8`: only the exact WireGuard
+chart is classified as non-browser UDP transport, including NodePort, without
+inventing an application origin or device grant. Unknown charts still fail.
+Full checks passed (85 chart, 10 security, 60 platform tests with two existing
+skips, four Node tests), all seven hooks and Required CI run `34957331210` passed,
+and independent review found no defects. Client activation must pin this checker
+or a reviewed successor; classification does not verify outer exposure or live
+enforcement. The Mac resolver procedure remains user-tested acceptance, not proof
+from source checks.
+
+### Activation Readiness
+
+The authorized alpha activation selected one approved public peer and one gateway
+replica. [Base PR #150](https://github.com/neurwerk/k8s_stack_base/pull/150), merged
+as `158ab37d15557b349e9b512b76aa5b99cd25eb6a`, bumps Forgejo to chart `0.1.1` so
+Flux does not reuse the pre-HTTPS-peer `0.1.0` artifact. Required CI run
+`34959250288` passed. Forgejo subsequently upgraded successfully and its live
+policy admits only the exact gateway identity on Pod TCP 3000.
+
+Read-only verification found both sources, all 52 HelmReleases and 14 Flux stages
+Ready. The gateway had one Ready replica and zero restarts; a single startup
+readiness warning cleared. All 69 active Pods were Ready, all 19 PVCs Bound, and
+Ceph reported `HEALTH_OK`. The logging pipeline was Ready with no warning/error
+lines in bounded recent samples. Public chat and issuer discovery returned strict
+HTTPS 200. The approved peer address was verified and only the server public key
+was retrieved; no private keys were inspected or changed.
+
+No device handshake had occurred at this checkpoint. This is startup and baseline
+health evidence, not completed end-to-end UDP/CNI, Mac DNS, browser login, Git,
+revocation or firewall-persistence acceptance. Those checks remain required below.
 
 ### Mac Enrollment
 
