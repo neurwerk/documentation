@@ -1,7 +1,8 @@
 # Routing
 
 The stack uses Gateway API resources for HTTP routing. Product charts own their
-`Gateway` and `HTTPRoute` resources.
+`Gateway` and `HTTPRoute` resources. The narrow maintenance exception uses
+operator-owned Traefik IngressRoute overlays from Base-owned inert templates.
 
 ## Gateway Controllers
 
@@ -46,6 +47,37 @@ Interpreter remain private and have no Gateway or Ingress resources.
 
 See [Certificates And Trust](certificates.md#public-tls) for certificate
 ownership and approval.
+
+## Maintenance Overlay
+
+The staged optional maintenance package is not in the normal request path.
+Operators can cover approved Studio, Dify, LibreChat (including Admin Panel),
+and Langfuse hosts individually or as their global union. Identity, model and
+storage endpoints are excluded; internal calls and background work are not
+quiesced. This is not a database write barrier.
+
+Original product Gateways and HTTPRoutes remain intact, including their TLS
+certificate provisioning. Maintenance IngressRoutes use `websecure`, `tls: {}`
+and the certificates already loaded into Traefik's default store. Exact-host,
+all-path overlays route to `maintenance:8080`, with priority `2000000000` for
+global and `1900000000` for products. Global and product scopes persist
+independently until explicitly disabled.
+
+The staged Base configuration enables both providers and CRD
+`allowEmptyServices` so an intact overlay and Service with no ready endpoints
+do not fall through to the application. A missing Service or deleted route can
+instead remove the router and reopen applications; this protection is not a
+replacement for preserving routing dependencies. Actual TLS and empty-backend
+behavior require authorized runtime acceptance.
+
+Helm owns the static Service, NetworkPolicy and enabled runtime-template
+ConfigMap, not the runtime Deployment or routes. After the last scope is off,
+successful operator cleanup removes the Deployment; failed checks can retain
+it. Tooling `0.6.2` is planned but unpublished for this integration. Alpha stages
+are prepared in a detached `maintenance.yaml`, outside root composition
+until approved adoption, not a verified rollout. See
+[On-Demand Maintenance](../operations/maintenance.md) for approvals, exact CLI
+syntax, manual lock recovery, branding and safe deactivation before contract changes.
 
 ## Canonical Endpoint Resolution
 
@@ -183,6 +215,8 @@ paths.
 ## Development Rules
 
 - Keep each `Gateway` and `HTTPRoute` in the chart that owns the route.
+- Only maintenance may use operator-owned IngressRoute copies of the reviewed
+  Base runtime contract; do not generalize this exception to application routes.
 - Use explicit hostnames on public HTTPS listeners and routes.
 - Keep parent and backend references in the same namespace. Add a
   `ReferenceGrant` only for a reviewed cross-namespace requirement.

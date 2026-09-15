@@ -79,6 +79,13 @@ that state is part of a declared readiness or release gate.
   narrowest possible ports and CIDRs.
 - Verify TLS identities. Do not disable certificate verification.
 
+The sole maintenance routing exception permits operator-owned Traefik
+`IngressRoute` custom resources copied from Base's inert runtime contract in
+namespace `maintenance`. It does not grant operator ownership of CRD definitions
+or ordinary application routing. Keep original Gateways and certificates intact;
+all writers must honor the maintenance operation lock and readiness/cleanup
+order. See [On-Demand Maintenance](../operations/maintenance.md).
+
 Default-deny is not platform-wide. It currently applies to `auth-keycloak`,
 `frontend-librechat`, `librechat-code-interpreter`, `infra-postgres-auth`, and
 `infra-postgres-operations`. Check the namespace and owning charts before

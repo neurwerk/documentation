@@ -143,8 +143,8 @@ service repository, not in platform charts.
 
 ## Tooling Repository
 
-The `tooling/` repository separates Kubernetes job commands from workstation
-utilities:
+The `tooling/` repository separates container commands (initialization Jobs and
+the on-demand maintenance responder) from workstation utilities:
 
 ```text
 tooling/
@@ -161,6 +161,9 @@ tooling/
 ```
 
 `cli_tools/` is excluded from the tooling package and container image.
+The maintenance responder lives in `src/k8s_stack_tooling/maintenance/`; its
+independently locked operator CLI lives in `cli_tools/maintenance/`. See the
+[maintenance ownership contract](../operations/maintenance.md#ownership-and-contract).
 
 ## Tests
 

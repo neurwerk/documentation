@@ -17,7 +17,7 @@ shared documentation and is not a Git repository.
 | `pii_engine/` | PII analysis, policy, and model runtime |
 | `studio/` | Studio API and web application |
 | `dify_ce_builder/` | Owned overlay and image build for upstream Dify |
-| `tooling/` | Kubernetes initialization commands and independently locked workstation tools |
+| `tooling/` | Kubernetes initialization commands, the on-demand maintenance responder, and independently locked workstation tools |
 | `docs/` | Cross-repository architecture, conventions, and runbooks |
 | `_external_readonly_repos/` | Read-only upstream source references; never edit these files |
 
@@ -62,6 +62,12 @@ Stage directories contain only aggregation. Keep product HelmReleases under
   [Image Releases](../operations/image-releases.md#keycloak-theme-image).
 - OpenBao bootstrap and supported provider updates:
   `tooling/cli_tools/openbao_stack_setup/`.
+- The maintenance operational service is a narrow Tooling ownership exception:
+  `tooling/src/k8s_stack_tooling/maintenance/` owns the responder and image assets;
+  `tooling/cli_tools/maintenance/` owns workstation operations. Base owns static
+  resources and inert runtime templates, while the operator owns their runtime
+  copies. This does not move general application services into Tooling. See
+  [On-Demand Maintenance](../operations/maintenance.md).
 - Cross-repository contracts and runbooks: `docs/dev/`.
 
 ## Boundaries
