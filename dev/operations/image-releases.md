@@ -78,6 +78,19 @@ CUDA was still building when CPU verification completed. The unchanged workflow
 publishes the combined GitHub Release only after both variants succeed; this
 record does not assert CUDA or combined Release completion.
 
+The user subsequently authorized updating Base [PR #152](https://github.com/neurwerk/k8s_stack_base/pull/152)
+to adopt this verified `0.8.1-cpu` image in Engine and model-sync, superseding
+the unmerged `0.8.0-cpu` pins without waiting for CUDA or the combined Release.
+This extends the CPU-only adoption exception to the exact artifact above.
+The cumulative chart versions remain `1.0.3` and `1.0.2`, with both appVersions
+set to `0.8.1`. The same PR adopts published extProc
+[`0.7.1`](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/releases/tag/v0.7.1)
+from `e50450d50849d9254fb9d87d6090d9cd92f3947e`, pinned to
+`sha256:59bb5a51192dbbb01ba5cb30c4d4b182c5fde2c3ae8c3193b3eda1cb6de3fbe6`,
+in chart `1.0.5`. Together these images accept 20,000-character tool descriptions.
+Base merge, platform publication, client adoption, and deployment remain separate
+actions; none is established by this pin update.
+
 ### Auxiliary Tooling Image
 
 The Tooling image is an auxiliary image in its consuming charts. Bump each
