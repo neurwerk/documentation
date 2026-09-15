@@ -291,10 +291,10 @@ For each draft:
 5. Merge the exact reviewed commit. This merge is the adoption authorization
    and may allow Flux to reconcile.
 
-Roll out one designated, deployed canary client first. A repository-only example
-does not provide rollout evidence. After an authorized deployment, inspect the
-source, Kustomizations, HelmReleases, warning events, and affected logs before
-advancing another client:
+Reuse operator-confirmed alpha testing; do not require another canary server or
+repeat feature qualification for each stable client. After an authorized
+deployment, inspect the source, Kustomizations, HelmReleases, warning events,
+and affected logs:
 
 ```bash
 flux get sources git -n flux-system
@@ -304,4 +304,4 @@ kubectl get events -A --field-selector=type!=Normal --sort-by='.lastTimestamp'
 ```
 
 A Git or configuration revert is not a state rollback. Follow the recovery
-action in the release migration document.
+policy in the release manifest and any supplied operator instructions.

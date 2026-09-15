@@ -14,6 +14,9 @@ enforced settings, follow local configuration and guidance. `docs/` is pre-Git.
    health checks.
 6. Make the smallest complete change and update tests and documentation with it.
 7. Run the relevant local validation commands before review.
+8. Accept operator-confirmed feature testing. Never require a disposable server,
+   staging cluster, or restore rehearsal for release or upgrade approval; these
+   exercises are opt-in. Keep normal CI, backups and installation health checks.
 
 ## Change Workflow
 

@@ -13,8 +13,8 @@ onboarding fix in [PR #115](https://github.com/neurwerk/k8s_stack_base/pull/115)
 and the Keycloak readback fix in
 [PR #117](https://github.com/neurwerk/k8s_stack_base/pull/117), with Tooling
 [PR #30](https://github.com/neurwerk/k8s_stack_tooling/pull/30).
-The source is available on alpha `main`, but the platform manifest still
-excludes the Forgejo packages and image from stable release eligibility.
+The operator confirmed testing complete on 2026-09-15. Forgejo is accepted for
+optional stable use in the `v0.3.8` preparation; `v0.3.7` remains unchanged.
 The authorized client has all four Forgejo stages active. It exposes only a
 ClusterIP Service; workstation browser access still requires a private tunnel.
 
@@ -24,7 +24,7 @@ reconciliation schema `4`, from immutable tooling commit
 replace the baseline tool requirement for clients without Forgejo.
 The implementation includes role selection, restricted OIDC scopes,
 and optional issuer CA trust. Check the reviewed implementation and release
-contract against the [rollout gates](../operations/forgejo.md#before-adoption).
+contract against the [installation steps](../operations/forgejo.md#before-adoption).
 
 Local Base validation passed 78 chart tests, 10 security tests, 16 platform tests,
 and four embedded JavaScript tests; two tag-only tests were skipped. Tooling's

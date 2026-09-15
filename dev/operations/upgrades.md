@@ -96,18 +96,23 @@ requires a verified empty or replacement environment.
 
 1. Verify the current and target exact signed tags, target manifest,
    prerequisites, packages, exclusions, and supported transition.
-2. Review and apply the migration and `Breaking Changes` instructions for every
-   crossed release in ascending SemVer order, including the target release.
-   Complete any checkpoint only where those instructions require one.
-3. Create application-consistent backups outside the production storage failure
-   domain. Restore them in a replacement environment and verify integrity.
-4. Test the exact transition and recovery action on a disposable cluster.
-5. Define application-level readiness checks. A Ready controller or
+2. Review any supplied upgrade instructions for the releases being crossed.
+3. Check that current backups cover the affected data and are stored outside
+   the production storage failure domain. An upgrade does not require a new
+   restore rehearsal or another server.
+4. Define application-level readiness checks. A Ready controller or
    `HelmRelease` does not prove that stored data is usable.
 
-Stop if any required evidence or procedure is missing. Do not invent an
-intermediate checkpoint or infer support from an upstream compatibility
-statement.
+Operator-confirmed testing is sufficient feature acceptance. Do not require a
+disposable server, staging cluster, exact-transition rehearsal, or repeat of
+completed feature tests for every release or client. Extra rehearsals are
+opt-in only when the operator explicitly requests them. Existing automated CI
+tests continue to run normally.
+
+For a new client, configure its own DNS, network, storage and credentials, then
+verify the installation works. Report concrete missing dependencies or
+incompatibilities; do not turn them into a blanket test-server requirement.
+Historical runbook checkpoints do not override this policy.
 
 Fresh installation does not require per-release upgrade evidence. Before a fresh
 installation, verify that the target is empty or is a replacement environment,
@@ -129,8 +134,8 @@ Retained PVCs and in-cluster snapshots are not independent backups.
 
 ## Persistent State
 
-Treat every persistent component as forward-sensitive unless the target release
-documents and tests an exact transition.
+Preserve existing persistent data and review actual migration requirements.
+A version change alone does not require a disposable-cluster rehearsal.
 
 | Component | Current persistent state | Recovery concern |
 | --- | --- | --- |

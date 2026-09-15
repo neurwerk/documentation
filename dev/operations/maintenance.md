@@ -6,6 +6,9 @@ no maintenance Deployment or Pod. Failed startup or cleanup can retain one.
 
 ## Status And Adoption
 
+The operator confirmed testing complete on 2026-09-15. Stable availability is
+being added in `v0.3.8`; completed testing is not repeated for each client.
+
 Tooling [0.6.2](https://github.com/neurwerk/k8s_stack_tooling/releases/tag/v0.6.2)
 is published from `03f5767f6716da1838b8d248317ae4d7b96a3953`. Its verified image is
 `ghcr.io/neurwerk/k8s-stack-tooling:0.6.2@sha256:299ded44d76d5a73e3c1045af09b02649b08a3b5f00d07a993e3be7c61a490fd`.
@@ -29,7 +32,7 @@ maintenance switch was activated. CLI scope-overlap tests remain offline tests.
 For another client, follow [Image Releases](image-releases.md), review Base and
 client values, and obtain rollout approval. Enable the contract and reconcile
 namespace -> client values -> maintenance release, then verify readiness and
-perform scoped acceptance. Installing the setup does not activate maintenance.
+the client's configured hosts. Installing the setup does not activate maintenance.
 
 ## Ownership And Contract
 
@@ -65,8 +68,9 @@ Both Traefik providers and CRD `allowEmptyServices` must be enabled. With the
 Service and route intact, empty endpoints must not fall through to applications.
 A missing Service or deleted overlay can instead reopen applications.
 
-Before rollout, obtain authorized runtime acceptance of TLS reuse, 503 responses,
-empty-backend behavior, NetworkPolicy enforcement and scope removal. Preserve
+Reuse accepted testing of TLS reuse, 503 responses, empty-backend behavior,
+NetworkPolicy enforcement and scope removal. No separate test server or repeat
+qualification is required. Preserve
 the static Service and original Gateway/certificate dependencies during the window.
 Maintenance does not drain existing connections, stop workers, block internal
 Service calls or establish database quiescence. Follow [Supported Upgrades](upgrades.md)

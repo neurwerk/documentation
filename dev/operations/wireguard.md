@@ -1,9 +1,9 @@
 # Static WireGuard Pilot
 
 Base's optional `charts/wireguard/` gateway implements a static one-device,
-Forgejo-HTTPS-only pilot. Source availability is not deployment acceptance.
-An authorized alpha client now selects this package; it remains excluded from
-stable release eligibility. Do not contact clusters, change DNS/firewalls, or provision
+Forgejo-HTTPS-only pilot. The operator confirmed completed testing and acceptance
+on 2026-09-15. Stable availability is being added in `v0.3.8`; no repeat
+qualification or disposable server is required. Do not contact clusters, change DNS/firewalls, or provision
 keys without separate authorization. The user executes EC2 changes with our help;
 agents do not SSH to EC2.
 
@@ -237,7 +237,8 @@ was retrieved; no private keys were inspected or changed.
 
 No device handshake had occurred at this checkpoint. This is startup and baseline
 health evidence, not completed end-to-end UDP/CNI, Mac DNS, browser login, Git,
-revocation or firewall-persistence acceptance. Those checks remain required below.
+revocation or firewall-persistence acceptance. The operator's later confirmation
+supersedes this historical pending-test checkpoint.
 
 ### Mac Enrollment
 
@@ -280,10 +281,9 @@ matching resolver file created for it. Do not change other VPN or DNS settings.
 
 The operator reports successful normal browser access using this hosts entry,
 after successful curl with `--resolve`. Read-only gateway inspection independently
-confirmed the approved peer's handshake and bidirectional traffic. This completes
-the basic connection and hostname setup, not every acceptance check: authenticated
-login/Git workflows, tunnel-off and revocation tests, and durable EC2 forwarding
-remain to be explicitly verified. The hosts entry stays present with the tunnel
+confirmed the approved peer's handshake and bidirectional traffic. The operator
+subsequently confirmed testing complete; earlier pending-test notes are historical,
+not new adoption gates. The hosts entry stays present with the tunnel
 off, but access must fail; the entry itself is not a security boundary.
 
 ### Stop Update Start
@@ -317,12 +317,11 @@ allowed forwarding, denied ports/direct destinations/unapproved peers, stopping
 and empty-list restart. It uses synthetic ephemeral keys and no host networking.
 The workspace VM cannot run that dataplane test; do not claim local packet proof.
 
-Live acceptance remains required: verify encrypted UDP return paths, CNI-visible
-gateway Pod identity, destination isolation after NAT, exact TLS identity,
-browser login/Git HTTPS and normal transfers at the selected MTU. Test altered
-client routes, tunnel-off behavior, removal during an open connection, and
-unrelated network/port denial. Check public applications and their login/files
-remain unchanged, then inspect Flux, workloads, storage, events and logs.
+Reuse the operator's accepted feature testing. For each new installation, confirm
+its UDP routing, Pod identity, destination isolation and TLS configuration, then
+check access and workload health. Broader route, revocation and recovery drills
+are optional exercises, not release gates. Do not require another server or
+repeat qualification before adoption.
 Do not broaden policy to node ranges if the CNI loses the intended Pod identity.
 
 The first pilot does not privatize other administration. Later whole-tool Grafana

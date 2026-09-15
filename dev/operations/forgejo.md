@@ -1,8 +1,9 @@
 # Forgejo Operations
 
-This runbook describes the optional integration. Forgejo is currently excluded
-from stable platform release eligibility. Preparation, credential provisioning,
-and application startup are separate stages.
+The operator confirmed completed testing and accepted this optional integration
+on 2026-09-15. Stable availability is being added in `v0.3.8`; the signed `v0.3.7`
+exclusions remain historical. Client credential provisioning and application
+startup still follow the dependency order below, not another qualification round.
 Do not contact a cluster, open a tunnel, change credentials, or touch persistent
 data without explicit authorization.
 
@@ -15,9 +16,9 @@ the waiver does not declare it empty, authorize deletion or replacement, or
 establish that recovery is possible. It does not change backup requirements for
 other rollouts or stable adoption.
 
-This specific alpha evaluation may use the reviewed Forgejo source while its
-packages remain excluded from stable release eligibility. No stable tag is
-published or adopted by this exception. Keep the application suspended until
+This historical alpha evaluation used the reviewed Forgejo source before stable
+availability. It does not require repeating the evaluation for each client.
+Keep a new installation suspended until
 the operator completes the required OpenBao ceremony and credential consumers
 converge. The operator will run that ceremony on their trusted workstation;
 the backup waiver does not waive the two-custodian procedure.
@@ -34,10 +35,8 @@ the backup waiver does not waive the two-custodian procedure.
    `7a00c0d7a725a500ca251d699ce3f00dff57e660`, recorded in the optional package's
    prerequisites. Schema `4` alone does not prove that the selected optional
    catalog is installed. Do not substitute a moving branch.
-3. Check that the target release explicitly permits the optional packages and
-   has matching migration instructions. Staged exclusions are a stop condition
-   for stable adoption; only the scoped alpha evaluation above is authorized
-   before stable eligibility. Stable adoption requires a reviewed exact signed platform tag and
+3. Select a release that includes the optional packages. Stable adoption uses
+   a reviewed exact signed platform tag and
    the compatibility checks in [Supported Upgrades](upgrades.md).
 4. Review the canonical hostname, approved private tunnel, local port `443`
    binding, browser trust, Pod DNS, Keycloak resolution, and egress. Exact
@@ -47,8 +46,9 @@ the backup waiver does not waive the two-custodian procedure.
    instance, Forgejo PVC, and durable credentials. Establish approved custody for
    the recovery password. Do not assume an existing target is empty.
 
-Private runtime acceptance is recorded below. Public-mode, rotation, outage,
-and full-recovery acceptance are not established by those results.
+The historical evidence below records specific observations, not a pending
+checklist. The operator's later acceptance is sufficient; do not demand a
+disposable server, full restore rehearsal, or repeat feature qualification.
 
 ## Verified Alpha Results
 
@@ -263,6 +263,10 @@ Stable clients remain unchanged until their later release bump and adoption.
 
 ## Acceptance Checks
 
+These checks are a reference for requested troubleshooting or testing, not a
+repeat-all requirement for every client. Reuse the operator's acceptance and
+check only the new installation's configuration and health after rollout.
+
 Before adopting a private HTTPS-only peer through
 `forgejo.networkPolicy.httpsClients`, keep the public Gateway disabled and review
 all additive ingress policies and existing `clients` for overlapping SSH grants.
@@ -271,8 +275,8 @@ rule; the new destination allowance alone does not establish a safe tunnel.
 Under explicit operational authorization, test HTTPS through Service `443` with
 canonical TLS verification, denial of SSH `2222` and unrelated sources, and no
 public or ordinary-network bypass. Gateway device revocation, active-flow closure,
-failure recovery and DNS remain separate acceptance gates, not claims of this
-offline chart change.
+failure recovery and DNS are not established by an offline chart check alone;
+use the accepted deployment evidence rather than requiring a new rehearsal.
 
 After explicit rollout authorization, confirm the Kubernetes context and inspect
 Flux sources, Kustomizations, both Forgejo-related HelmReleases, warning events,
@@ -303,8 +307,8 @@ current-generation readiness; do not expose sensitive request content.
   recovery consequences before changing encryption or signing keys.
 - Test Keycloak outage behavior and the manual offboarding procedure, including
   native sessions, tokens, personal SSH keys, and repository deploy keys.
-- Test emergency login closure and a complete coordinated restore in an
-  authorized replacement environment before claiming recoverability.
+- If the operator requests a recovery exercise, verify emergency login closure
+  and the restored data. A restore rehearsal is not a release or upgrade gate.
 
 Record which transport modes and operations were actually tested. Success in
 private mode does not establish public-mode acceptance, or vice versa.
