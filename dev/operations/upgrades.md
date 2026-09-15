@@ -49,10 +49,11 @@ do not establish live adoption, migration, cleanup, or recovery evidence.
 The selected target tag is authoritative. Check:
 
 - `release/manifest.yaml` for `spec.compatibility` and prerequisites;
-- `release/migrations/vX.Y.Z.md` for operator actions, checks, exclusions, and
+- `release/migrations/vX.Y.Z.md`, when present, for operator actions, checks, exclusions, and
   recovery limits.
 
-The files must agree. Published `v0.1.0` and `v0.1.1` use immutable legacy
+Explicit policy declarations in notes must agree with the manifest; no prose
+section or migration file is required. Published `v0.1.0` and `v0.1.1` use immutable legacy
 `upgradesFrom` allowlists. The published `v0.3.3` contract uses `stableUpgrade`:
 
 - `supported` is the default and permits an upgrade from any exact stable tag
@@ -76,7 +77,7 @@ Use `platform.neurwerk.com/adoption-mode` as follows:
   replacement environment.
 
 The compatibility check verifies the signed tag, published GitHub Release,
-manifest, migration document, adoption mode, and source version. It does not
+manifest, any explicit migration declarations, adoption mode, and source version. It does not
 verify backups, restore data, or prove data integrity. The current schema and
 check reject all downgrades.
 
@@ -87,7 +88,7 @@ trust root. It is not a published release contract.
 
 Before selecting stable, freeze a changing alpha branch to the observed commit
 and reconcile it. A forward upgrade requires that exact commit in the target
-manifest's `upgradesFromAlphaRevisions` and migration document. This exact alpha
+manifest's `upgradesFromAlphaRevisions`. Any migration declaration must agree. This exact alpha
 upgrade contract is unchanged by `stableUpgrade`. Fresh installation instead
 requires a verified empty or replacement environment.
 

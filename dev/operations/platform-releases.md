@@ -41,10 +41,10 @@ Each release commit contains:
 | File | Purpose |
 | --- | --- |
 | `VERSION` | Version without the leading `v` |
-| `CHANGELOG.md` | Curated changes and compatibility summary |
+| `CHANGELOG.md` | Optional release notes |
 | `release/config.yaml` | Reviewed release, compatibility, package, prerequisite, exception, trust, and provenance inputs |
 | `release/manifest.yaml` | Generated platform artifact inventory |
-| `release/migrations/vX.Y.Z.md` | Operator actions, checks, and recovery limits |
+| `release/migrations/vX.Y.Z.md` | Optional extra upgrade instructions |
 
 The manifest records charts, chart application versions, Helm dependencies,
 HelmRelease resources, runtime images, packages, prerequisites, exceptions,
@@ -113,11 +113,9 @@ Publish and verify required images through the
 4. The workflow verifies the signed predecessor and opens a draft branch named
    `release/vX.Y.Z`. It changes only the five release evidence files listed
    above.
-5. Review `release/config.yaml`, the compact migration declarations, and the
-   authored release entry in `CHANGELOG.md`. Preparation preserves an existing
-   release entry or uses the `Unreleased` text, falling back to the reviewed
-   summary when empty. Add any required operator actions; empty release notes
-   and unresolved `TODO` markers fail validation.
+5. Review `release/config.yaml` and any release notes. Preparation preserves
+   existing notes or uses `Unreleased` text. Notes and summaries may be empty;
+   add instructions only when useful. Unfinished `TODO` markers still fail validation.
 6. Regenerate the manifest and run all release checks.
 7. Resolve review comments and merge the release pull request to `main` through
    the normal reviewed workflow.
@@ -129,52 +127,18 @@ token allows the draft pull request to run normal `Required CI`.
 
 ### Migration Document
 
-The current successor scaffold and validator use exactly one of each required
-level-two section:
+All prose sections are optional, including Support, Breaking Changes and
+Recovery. A migration file may be absent, empty, or plain text. Release notes
+may also be empty; publication then shows only the release version. The CLI
+does not add boilerplate back after it is removed.
 
-- `Support`
-- `Breaking Changes`
-- `Recovery`
+The manifest remains the source of truth for versions, compatibility, recovery
+policy, prerequisites and artifacts. If notes explicitly declare a policy, it
+must agree with the manifest. Historical signed releases are unchanged.
 
-No additional boilerplate headings are mandatory. Published documents remain
-authoritative and immutable; `v0.3.2` already uses this compact format.
-
-For every new-format release, the `Support` section uses exactly one of these
-lines:
-
-```text
-- Stable upgrades: Supported.
-- Stable upgrades: Fresh installation only.
-```
-
-It also declares exact full alpha source commits and unsupported downgrade
-behavior. The `Breaking Changes` section must be nonempty. The scaffold uses:
-
-```text
-See the release notes in CHANGELOG.md for breaking changes and required actions.
-```
-
-Keep the actual changes and required operator actions in the authored release
-entry in `CHANGELOG.md`; concise reviewed bullets are sufficient. Add specific
-migration details only when needed, not empty sections or generated TODO lists.
-A checkpoint is documented only when that release needs one; it is not a
-machine-readable compatibility field.
-
-The immutable `v0.1.0` and `v0.1.1` migration documents retain their legacy
-exact stable-source declarations. Write `None.` when there are no supported
-alpha commits or legacy stable sources.
-
-The `Recovery` section contains a `Recovery classification: <label>.`
-declaration using one classification:
-
-- `Configuration revert`
-- `Forward fix`
-- `Component native restore`
-- `Replacement restore`
-
-Keep the migration document consistent with both `release/config.yaml` and the
-generated manifest. When client values must change, document a safe staged
-order. The client and platform Git sources do not reconcile atomically.
+Use short instructions when an upgrade needs special handling. Optional prose
+does not remove backup, approval, signature or supported-transition checks.
+Normal Base CI validates the actual release evidence before merge.
 
 ### Validation
 
