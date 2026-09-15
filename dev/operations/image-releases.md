@@ -58,6 +58,26 @@ version `0.8.0`. Model bundle pins remain unchanged. CUDA publication is not an
 adoption gate for these CPU consumers and no CUDA pin is added. This exception
 does not establish merge, deployment, client adoption, or Base `0.3.7` publication.
 
+### PII Engine 0.8.1 CPU-Only Publication Verification
+
+On 2026-09-15, the user explicitly authorized merging PII Engine
+[PR #13](https://github.com/neurwerk/k8s_stack_pii_engine/pull/13), publishing
+`v0.8.1`, and completing CPU verification without waiting for CUDA or the combined
+GitHub Release. This publication-only exception does not extend the `0.8.0`
+Base adoption exception above or authorize image pin changes or deployment.
+
+- PR #13 was squash-merged and tag `v0.8.1` resolves to
+  `a0883dee93333f05af5ba19034c34dcc87dbe230`.
+- [CPU publication job 104388944955](https://github.com/neurwerk/k8s_stack_pii_engine/actions/runs/34971499708/job/104388944955)
+  succeeded, including registry digest, `linux/amd64`, and source-revision checks.
+- Its `pii-engine-cpu-digest` artifact records
+  `sha256:a829987654971c87d802f6ba3059d19caf69bc3e969a95bebee62986355cd76a`
+  for `ghcr.io/neurwerk/k8s-stack-pii-engine:0.8.1-cpu`.
+
+CUDA was still building when CPU verification completed. The unchanged workflow
+publishes the combined GitHub Release only after both variants succeed; this
+record does not assert CUDA or combined Release completion.
+
 ### Auxiliary Tooling Image
 
 The Tooling image is an auxiliary image in its consuming charts. Bump each
