@@ -42,6 +42,13 @@ must match.
 The Tooling image is an auxiliary image in its consuming charts. Bump each
 affected chart's `version`, but keep the product's existing `appVersion`.
 
+Tooling [v0.6.2](https://github.com/neurwerk/k8s_stack_tooling/releases/tag/v0.6.2)
+is published from `03f5767f6716da1838b8d248317ae4d7b96a3953`, with verified manifest
+digest `sha256:299ded44d76d5a73e3c1045af09b02649b08a3b5f00d07a993e3be7c61a490fd`
+and a `linux/amd64` image. Maintenance chart `0.1.1` is its new consumer; this
+additive rollout does not update existing initialization-job consumers. See
+[On-Demand Maintenance](maintenance.md) for alpha acceptance and idle state.
+
 ### Keycloak Theme Image
 
 `keycloak_theme/` (`neurwerk/k8s_stack_keycloak_theme` on GitHub) owns the native

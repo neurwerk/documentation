@@ -6,22 +6,30 @@ no maintenance Deployment or Pod. Failed startup or cleanup can retain one.
 
 ## Status And Adoption
 
-Tooling `0.6.2` is planned, unpublished, and not live-verified. Server and CLI
-tests are offline; CLI tests mock Kubernetes and HTTPS. No cluster access or
-mutation was performed for this documentation change.
+Tooling [0.6.2](https://github.com/neurwerk/k8s_stack_tooling/releases/tag/v0.6.2)
+is published from `03f5767f6716da1838b8d248317ae4d7b96a3953`. Its verified image is
+`ghcr.io/neurwerk/k8s-stack-tooling:0.6.2@sha256:299ded44d76d5a73e3c1045af09b02649b08a3b5f00d07a993e3be7c61a490fd`.
+Base `22e834c9161050756cca6bddb50d066359518e97` supplies this pin in maintenance
+chart `0.1.1`; existing initialization-job image pins are unchanged.
 
-The alpha preparation keeps `maintenance.enabled: false` and the image empty.
-The detached `clusters/prod-eu-1/maintenance.yaml` holds three suspended
-stages: `maintenance-namespaces`, `client-maintenance-values`, and `maintenance`.
-It stays unreferenced by the root composition until future approved adoption;
-no access-planner exception is needed for this detached preparation.
+The authorized alpha rollout on 2026-09-15 enabled the contract and all three
+stages in the existing namespace, client-values and application composition files.
+Flux sources, Kustomizations and HelmReleases were Ready, with no active maintenance
+routes, Deployment, Pod or operation lock remaining after acceptance.
 
-Before adoption, publish and verify the server image under
-[Image Releases](image-releases.md), review the selected Base revision and client
-values, and obtain explicit rollout approval. Add the detached file to composition
-only in that reviewed adoption, enable the contract with the verified image,
-and resume namespace -> client values -> maintenance release. Verify Flux source
-revisions and HelmRelease readiness. Preparing the release does not activate it.
+A temporary random-header-only route verified 503 pages for every approved host,
+including specific API paths and POST requests, while ordinary requests retained
+their original responses. Certificates were unchanged, the company PNG loaded,
+and operator resources survived Flux reconciliation. With the temporary server
+scaled to zero, test traffic received 503 rather than falling through to apps.
+Startup took 39 seconds in this test, with transient connection-refused health
+probes before readiness. All temporary resources were removed; no normal product
+maintenance switch was activated. CLI scope-overlap tests remain offline tests.
+
+For another client, follow [Image Releases](image-releases.md), review Base and
+client values, and obtain rollout approval. Enable the contract and reconcile
+namespace -> client values -> maintenance release, then verify readiness and
+perform scoped acceptance. Installing the setup does not activate maintenance.
 
 ## Ownership And Contract
 

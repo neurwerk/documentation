@@ -50,7 +50,7 @@ ownership and approval.
 
 ## Maintenance Overlay
 
-The staged optional maintenance package is not in the normal request path.
+The optional maintenance package is not in the normal request path.
 Operators can cover approved Studio, Dify, LibreChat (including Admin Panel),
 and Langfuse hosts individually or as their global union. Identity, model and
 storage endpoints are excluded; internal calls and background work are not
@@ -63,19 +63,18 @@ all-path overlays route to `maintenance:8080`, with priority `2000000000` for
 global and `1900000000` for products. Global and product scopes persist
 independently until explicitly disabled.
 
-The staged Base configuration enables both providers and CRD
+The Base configuration enables both providers and CRD
 `allowEmptyServices` so an intact overlay and Service with no ready endpoints
 do not fall through to the application. A missing Service or deleted route can
 instead remove the router and reopen applications; this protection is not a
-replacement for preserving routing dependencies. Actual TLS and empty-backend
-behavior require authorized runtime acceptance.
+replacement for preserving routing dependencies. TLS reuse and empty-backend
+behavior passed authorized alpha acceptance with a test-header-only route.
 
 Helm owns the static Service, NetworkPolicy and enabled runtime-template
 ConfigMap, not the runtime Deployment or routes. After the last scope is off,
 successful operator cleanup removes the Deployment; failed checks can retain
-it. Tooling `0.6.2` is planned but unpublished for this integration. Alpha stages
-are prepared in a detached `maintenance.yaml`, outside root composition
-until approved adoption, not a verified rollout. See
+it. Tooling `0.6.2` is published and maintenance chart `0.1.1` is installed on
+alpha, with every runtime scope off and no idle maintenance Pods. See
 [On-Demand Maintenance](../operations/maintenance.md) for approvals, exact CLI
 syntax, manual lock recovery, branding and safe deactivation before contract changes.
 
