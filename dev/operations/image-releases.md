@@ -39,6 +39,27 @@ PII Engine publishes CPU and CUDA variants from one release tag. Studio
 publishes API and Web images from one release tag, so its API and Web versions
 must match.
 
+### PII Engine 0.8.0 CPU-Only Adoption Exception
+
+On 2026-09-15, the user explicitly authorized Base adoption of the published
+`ghcr.io/neurwerk/k8s-stack-pii-engine:0.8.0-cpu` image without waiting for CUDA
+or the combined GitHub Release. This is a scoped exception to the GitHub Release
+verification prerequisite below, not a waiver of image verification:
+
+- Tag `v0.8.0` resolves to source `d3bf3595f94e3fee0e33c6eae89ac4377474ee6e`.
+- [CPU publication job 104361602237](https://github.com/neurwerk/k8s_stack_pii_engine/actions/runs/34963163582/job/104361602237)
+  succeeded, including registry digest, `linux/amd64`, and source-revision checks.
+- Its `pii-engine-cpu-digest` artifact records
+  `sha256:2cfb28997c8063938c96bd414093f5395da2c102015b7269a84157d3cfdb0fc9`.
+
+The adoption updates all CPU image defaults in both Engine and model-sync
+charts, with chart versions `1.0.3` and `1.0.2` respectively and application
+version `0.8.0`. Model bundle pins remain unchanged. CUDA publication is not an
+adoption gate for these CPU consumers and no CUDA pin is added. This exception
+does not establish merge, deployment, client adoption, or Base `0.3.7` publication.
+
+### Auxiliary Tooling Image
+
 The Tooling image is an auxiliary image in its consuming charts. Bump each
 affected chart's `version`, but keep the product's existing `appVersion`.
 
