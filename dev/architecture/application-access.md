@@ -215,6 +215,13 @@ Private Forgejo's exact Pod DNS exception remains separate from its Keycloak
 issuer path. Never replace the whole client domain with a catch-all VPN resolver
 merely to reach a restricted application.
 
+The approved one-device alpha pilot uses an exact workstation `/etc/hosts` entry
+for the canonical Forgejo hostname and reviewed VPN virtual address. This replaces
+the proposed workstation DNS helper, preserves HTTPS identity, and does not change
+Pod resolution or public DNS. Network restrictions remain the gateway's job; the
+operator reports normal hostname access working. Broader workflow and negative
+acceptance remain separate in the [WireGuard runbook](../operations/wireguard.md).
+
 The operator reports temporary public Route53 application A records for the private client because
 internal DNS administration is not yet available. This is an exception to the
 documented final internal-only address-publication policy, not evidence of public

@@ -261,68 +261,30 @@ sequence below when adding the approved Mac peer, then verify both positive
 Forgejo access and negative unrelated-route/port tests. Remove it the same way;
 application credential offboarding remains separate.
 
-### Scoped Mac DNS
+### Mac Hostname Mapping
 
-The pilot uses a workstation-local `dnsmasq` instance and macOS's per-domain
-resolver, not a gateway DNS service, `/etc/hosts`, public DNS changes or a
-WireGuard `DNS` field. This needs user-executed Mac setup; Linux-side checks do
-not establish macOS application resolution. Use the canonical hostname and
-reviewed virtual IPv4 from the private client configuration. Keep the tunnel off
-while preparing resolution, and do not replace an existing resolver or listener.
+The operator approved a single `/etc/hosts` entry for this one-device pilot,
+replacing the earlier local DNS-helper proposal. No `dnsmasq`, per-domain resolver,
+catch-all DNS setting or public DNS change is required. On the Mac, map only the
+canonical Forgejo hostname to the reviewed VPN virtual IPv4:
 
-With Homebrew already available, install `dnsmasq` if absent (`brew install
-dnsmasq`). Check `scutil --dns`, any existing `/etc/resolver/<canonical-hostname>`
-file, and TCP/UDP port 1053 with `lsof -nP -iTCP:1053 -iUDP:1053`; stop on a
-conflict rather than overwriting another VPN's setup. In one terminal, set the
-two values below from the client and leave this foreground process running for
-the pilot:
-
-```bash
-export FORGEJO_HOST=forgejo.example.com
-export FORGEJO_VIRTUAL_IP='<reviewed-virtual-ip>'
-"$(brew --prefix)/sbin/dnsmasq" --no-daemon --conf-file=/dev/null \
-  --port=1053 --listen-address=127.0.0.1 --bind-interfaces \
-  --no-resolv --no-hosts --local="/$FORGEJO_HOST/" \
-  --host-record="$FORGEJO_HOST,$FORGEJO_VIRTUAL_IP"
+```text
+<reviewed-virtual-ip> <canonical-forgejo-hostname>
 ```
 
-The empty configuration file avoids loading an existing broad dnsmasq setup.
-No upstream, DHCP or wildcard address mapping is configured. Only the exact
-host has an A record; AAAA and HTTPS/SVCB queries cannot introduce another
-destination. The local zone also covers names beneath that host, not siblings
-or the parent domain. This process does not need root on port 1053.
+Preserve unrelated entries and check for conflicting entries for that hostname.
+This preserves the normal URL, TLS identity and callbacks; it does not configure
+Pod DNS or grant network access. Each additional workstation needs its own entry.
+If the previous helper was tried, stop only that helper and remove only the
+matching resolver file created for it. Do not change other VPN or DNS settings.
 
-In a second terminal set `FORGEJO_HOST` to the same canonical hostname, then
-create only its resolver file, refusing to overwrite one that already exists:
-
-```bash
-sudo mkdir -p /etc/resolver
-printf 'nameserver 127.0.0.1\nport 1053\n' |
-  sudo sh -c 'set -C; umask 022; cat > "$1"' sh "/etc/resolver/$FORGEJO_HOST"
-sudo dscacheutil -flushcache
-sudo killall -HUP mDNSResponder
-scutil --dns
-dig @127.0.0.1 -p 1053 "$FORGEJO_HOST" A
-dig @127.0.0.1 -p 1053 "$FORGEJO_HOST" AAAA
-dscacheutil -q host -a name "$FORGEJO_HOST"
-```
-
-Verify the system result is only the virtual IPv4 and ordinary public/corporate
-names still use their existing resolvers. Plain `dig <hostname>` does not prove
-macOS's scoped resolver selection. With WireGuard on, test normal `curl` without
-`--resolve`, browser login and Git HTTPS. Browser secure-DNS/proxy settings can
-bypass the system resolver: inspect the actual application rather than changing
-global DNS. With the tunnel off the hostname may still resolve to the virtual
-IP, but Forgejo access must fail. Test resolver failure and any concurrent VPN;
-the DNS mapping is not a firewall or a proven fail-closed routing mechanism.
-
-After the pilot, stop only this foreground process and remove only the resolver
-file created here, then flush the cache and recheck ordinary resolution. Do not
-leave a dead resolver installed. A persistent login service can replace the
-foreground invocation after successful Mac testing; it is not installed by this
-runbook or required to test the connection. Upstream references:
-[dnsmasq options](https://dnsmasq.org/docs/dnsmasq-man.html) and
-[macOS resolver selection](https://www.manpagez.com/man/5/resolver/).
+The operator reports successful normal browser access using this hosts entry,
+after successful curl with `--resolve`. Read-only gateway inspection independently
+confirmed the approved peer's handshake and bidirectional traffic. This completes
+the basic connection and hostname setup, not every acceptance check: authenticated
+login/Git workflows, tunnel-off and revocation tests, and durable EC2 forwarding
+remain to be explicitly verified. The hosts entry stays present with the tunnel
+off, but access must fail; the entry itself is not a security boundary.
 
 ### Stop Update Start
 
