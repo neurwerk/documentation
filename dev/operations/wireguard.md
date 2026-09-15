@@ -48,7 +48,7 @@ after the exact optional tooling prerequisite was recorded. All three default
 stage renders remained byte-identical; no client composition was selected.
 Key tests use an in-memory OpenBao fake and deterministic WireGuard key fixture,
 not live OpenBao or operational key generation. Live ESO delivery and Mac setup
-remain unverified until an authorized operator runs them.
+were not verified by those source checks; subsequent delivery evidence is below.
 
 ### Gateway Runtime
 
@@ -188,6 +188,30 @@ entries; raw application log content and credential values were not disclosed.
 This verifies stopped preparation only, not browser login, file transfers,
 end-to-end UDP, live CNI/NAT policy, Mac enrollment, DNS or activation acceptance.
 
+### Activation Validation Blocker
+
+On 2026-09-15, after the operator reported completing the approved catalog
+ceremony, read-only inspection confirmed the WireGuard SecretStore Ready/Valid,
+ExternalSecret Ready/SecretSynced with the current-generation synchronization
+prefix, and secret-sync stage Ready. No Secret values or operational private
+keys were read. Both Git sources, all 13 existing Flux stages and all 51
+HelmReleases were Ready; Forgejo, its certificate and both logging-pipeline
+components remained healthy.
+
+The separately authorized one-device activation was prepared but not deployed.
+Full client validation rejected the newly selected `charts/wireguard` because
+the immutable selected-values checker at
+`90d6ce6342375520ee1bd644aa24d8013ee1d96f` has no classification for that chart.
+The current Base checker at `f3ad4196382da780c1ae073d845b2de221bad4e3` also lacks
+it. Independent review reproduced the failure and confirmed that no supported
+client setting can extend the hard-coded chart catalog. A reviewed Base checker
+prerequisite and subsequent immutable client checker pin are required; do not
+skip the check, conceal the selected HelmRelease or suspend it to bypass validation.
+This prerequisite exceeds the requested single client activation PR, so activation
+remains stopped pending approval of that additional scope. Runtime Base selection,
+keys, public applications and stable clients remain unchanged. The Mac resolver
+procedure below is prepared, not a claim of tested Mac resolution or enrollment.
+
 ### Mac Enrollment
 
 After the network/activation gates are authorized, create an empty tunnel in the
@@ -209,6 +233,69 @@ This command is not permission to contact the cluster now. Do not substitute
 sequence below when adding the approved Mac peer, then verify both positive
 Forgejo access and negative unrelated-route/port tests. Remove it the same way;
 application credential offboarding remains separate.
+
+### Scoped Mac DNS
+
+The pilot uses a workstation-local `dnsmasq` instance and macOS's per-domain
+resolver, not a gateway DNS service, `/etc/hosts`, public DNS changes or a
+WireGuard `DNS` field. This needs user-executed Mac setup; Linux-side checks do
+not establish macOS application resolution. Use the canonical hostname and
+reviewed virtual IPv4 from the private client configuration. Keep the tunnel off
+while preparing resolution, and do not replace an existing resolver or listener.
+
+With Homebrew already available, install `dnsmasq` if absent (`brew install
+dnsmasq`). Check `scutil --dns`, any existing `/etc/resolver/<canonical-hostname>`
+file, and TCP/UDP port 1053 with `lsof -nP -iTCP:1053 -iUDP:1053`; stop on a
+conflict rather than overwriting another VPN's setup. In one terminal, set the
+two values below from the client and leave this foreground process running for
+the pilot:
+
+```bash
+export FORGEJO_HOST=forgejo.example.com
+export FORGEJO_VIRTUAL_IP='<reviewed-virtual-ip>'
+"$(brew --prefix)/sbin/dnsmasq" --no-daemon --conf-file=/dev/null \
+  --port=1053 --listen-address=127.0.0.1 --bind-interfaces \
+  --no-resolv --no-hosts --local="/$FORGEJO_HOST/" \
+  --host-record="$FORGEJO_HOST,$FORGEJO_VIRTUAL_IP"
+```
+
+The empty configuration file avoids loading an existing broad dnsmasq setup.
+No upstream, DHCP or wildcard address mapping is configured. Only the exact
+host has an A record; AAAA and HTTPS/SVCB queries cannot introduce another
+destination. The local zone also covers names beneath that host, not siblings
+or the parent domain. This process does not need root on port 1053.
+
+In a second terminal set `FORGEJO_HOST` to the same canonical hostname, then
+create only its resolver file, refusing to overwrite one that already exists:
+
+```bash
+sudo mkdir -p /etc/resolver
+printf 'nameserver 127.0.0.1\nport 1053\n' |
+  sudo sh -c 'set -C; umask 022; cat > "$1"' sh "/etc/resolver/$FORGEJO_HOST"
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+scutil --dns
+dig @127.0.0.1 -p 1053 "$FORGEJO_HOST" A
+dig @127.0.0.1 -p 1053 "$FORGEJO_HOST" AAAA
+dscacheutil -q host -a name "$FORGEJO_HOST"
+```
+
+Verify the system result is only the virtual IPv4 and ordinary public/corporate
+names still use their existing resolvers. Plain `dig <hostname>` does not prove
+macOS's scoped resolver selection. With WireGuard on, test normal `curl` without
+`--resolve`, browser login and Git HTTPS. Browser secure-DNS/proxy settings can
+bypass the system resolver: inspect the actual application rather than changing
+global DNS. With the tunnel off the hostname may still resolve to the virtual
+IP, but Forgejo access must fail. Test resolver failure and any concurrent VPN;
+the DNS mapping is not a firewall or a proven fail-closed routing mechanism.
+
+After the pilot, stop only this foreground process and remove only the resolver
+file created here, then flush the cache and recheck ordinary resolution. Do not
+leave a dead resolver installed. A persistent login service can replace the
+foreground invocation after successful Mac testing; it is not installed by this
+runbook or required to test the connection. Upstream references:
+[dnsmasq options](https://dnsmasq.org/docs/dnsmasq-man.html) and
+[macOS resolver selection](https://www.manpagez.com/man/5/resolver/).
 
 ### Stop Update Start
 
