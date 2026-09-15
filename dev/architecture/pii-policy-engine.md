@@ -223,6 +223,10 @@ reaches the character limit.
 Studio API also limits supported text fields to `100,000` characters before it
 calls PII Engine.
 
+The extProc and PII Engine source contracts allow `20,000` characters per tool
+description because OpenCode descriptions can exceed `4,000`; deployment requires
+new service image releases and platform adoption.
+
 The deployed timeout order for model traffic is:
 
 ```text
