@@ -77,6 +77,16 @@ DocumentDB gateway uses TLS.
 
 ## Trust Distribution
 
+### Docling (Staged)
+
+The disabled Docling chart requests `docling-tls` from the internal issuer, with
+an exact namespace/DNS approval profile gated by `docling.enabled`. It uses a
+90-day RSA-2048 server certificate with rotation. No Docling certificate is
+requested in the default composition. Its separate optional Reloader values
+package must be composed after the namespace exists and reconciled before
+enablement; annotations alone do not make the existing controller watch a new
+namespace. See [Docling service wiring](docling.md#disabled-service-package).
+
 ### OpenBao CA Bundle
 
 trust-manager copies `tls.crt` from the internal CA Secret into ConfigMap
