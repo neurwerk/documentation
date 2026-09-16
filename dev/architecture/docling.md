@@ -126,6 +126,10 @@ options, and no browser receives the service API key.
 The Pod has one worker and converter cache, UID 1001, no Kubernetes API token,
 no GPU resources, read-only root and bounded disposable `/scratch` and `/tmp`
 volumes. Its probes check the local lifecycle, not remote model availability.
+Uvicorn has no server-wide concurrency cap: that cap also rejects health probes
+when conversions occupy the listener. Conversion admission belongs in the gateway,
+before calling Docling, and must be implemented before this disabled service is
+enabled. One native worker does not bound waiting requests or the task queue.
 Defaults request a 300-second document budget, 90-second model calls and a
 360-second synchronous wait. Retries and page-batch checks can exceed those
 budgets; they are not hard job-cancellation guarantees. Future extProc must enforce
