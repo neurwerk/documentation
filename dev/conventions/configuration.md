@@ -126,6 +126,22 @@ and verified identity. Callers cannot override it. See
 [Routing](../architecture/routing.md) and
 [Observability](../architecture/observability.md).
 
+### Attachment Modes (In Review)
+
+Model `attachmentMode` is `block` (default), `extract` or `passthrough`, separately
+from `piiEnabled`. Passthrough requires PII disabled and deliberately sends raw
+attachments to the selected backend; it neither implies local routing nor disables
+content tracing. Extract performs document conversion before optional PII and
+must never fall back to passthrough. The current implementation proposal rejects
+file parts in extract mode until Docling integration is ready.
+
+The chart produces an optional sparse `attachment_modes` map next to the existing
+trusted model-to-PII map. Configure direct/local models in the existing AgentGateway
+product values; normal Helm whole-list override rules still apply. Install the
+new extProc consumer before setting any explicit mode: shipped consumers reject
+unknown metadata fields. See [Docling attachment modes](../architecture/docling.md#configuration-and-compatibility)
+for the review-stage contract and tracked changes; this is not release adoption.
+
 ## Secrets
 
 Never commit these values in client or platform configuration:

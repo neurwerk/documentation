@@ -10,17 +10,19 @@ needed to begin implementation.
 [Base #170](https://github.com/neurwerk/k8s_stack_base/issues/170) tracks the
 cross-repository work. The first implementation is
 [extProc PR #28](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/28):
-typed Chat/Responses attachments, including history, are rejected locally with
-HTTP 403 before optional PII dispatch. It does not call PII Engine for the block
-and preserves text-only bypass, arbitrary tool JSON and MCP behavior. This is a
-review-stage change, not a published image or deployed platform feature; all raw
-documents remain blocked until conversion is implemented.
+typed Chat/Responses attachments, including history, follow a per-model mode
+independently of PII. Missing modes default to `block`; explicit `passthrough`
+requires PII disabled. `extract` fails closed with HTTP 503 for file parts until
+conversion is implemented; other attachment types return 403 in that mode.
+This preserves ordinary text-only bypass, arbitrary tool JSON and MCP behavior.
+It is a review-stage change, not a published image or deployed platform feature.
 
 The remaining bounded tasks are:
 
 - [Gateway conversion #27](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/issues/27).
 - [Document PII contract #14](https://github.com/neurwerk/k8s_stack_pii_engine/issues/14).
 - [CPU service and client-overridable defaults #171](https://github.com/neurwerk/k8s_stack_base/issues/171).
+- [Per-model chart PR #174](https://github.com/neurwerk/k8s_stack_base/pull/174), implementing [#173](https://github.com/neurwerk/k8s_stack_base/issues/173).
 
 ## Deployment Boundary
 
@@ -28,6 +30,9 @@ The remaining bounded tasks are:
 model runs on the internal GPU VM and is called by Docling over an API.** Do not
 deploy the whole Docling service on that VM or require a GPU on the Docling Pod
 for this design.
+
+The following flow applies to `extract` mode. `passthrough` instead forwards the
+original request directly to the selected chat backend, without Docling or PII.
 
 ```text
 LibreChat
@@ -109,7 +114,7 @@ the `DoclingDocument`; the GPU server need not return that JSON schema directly.
 Using the same URL path does not mean using the same hostname, credentials or
 model as normal chat. Docling calls the private GPU endpoint directly, not the
 public AgentGateway chat route. Do not loop extraction back through the gateway's
-attachment handler or relax its user-image block to allow these internal calls.
+attachment handler or change user attachment modes to allow these internal calls.
 
 ## Remote Pipeline Configuration
 
@@ -133,21 +138,51 @@ inference URL, model or authentication headers.
 
 ## PII And Attachment Rules
 
-Document handling is independent of the destination's `piiEnabled` setting:
+Each model has an independent `attachmentMode`. Model routing, attachment handling,
+PII processing and content tracing remain separate controls:
 
-| Input | PII enabled | PII disabled |
+| Mode | PII enabled | PII disabled |
 | --- | --- | --- |
-| Allowed raw document | Validate, extract, apply PII policy, dispatch if allowed | Validate, extract, dispatch without PII Engine calls |
-| Ordinary or LibreChat-extracted text | Apply existing PII policy | Existing text-only bypass |
-| Image, audio, video or unsupported file | Reject | Reject |
-| Failed, timed-out or incomplete conversion | Reject; no raw fallback | Reject; no raw fallback |
-| PII failure or block | Reject | No PII dependency |
+| `block` (default) | Reject typed attachments with HTTP 403 | Reject typed attachments with HTTP 403 |
+| `extract` | Validate/extract allowed documents, then apply PII policy | Validate/extract allowed documents without PII |
+| `passthrough` | Invalid configuration | Forward original request and provider response unchanged, without extraction or PII |
 
-The initial raw-document allowlist is PDF, DOCX, XLSX, PPTX, plain text, Markdown
-and CSV. A scanned PDF may produce internal page images for extraction; a user
-image attachment remains unsupported. Strip image payloads, embedded objects,
+Ordinary or LibreChat-extracted text follows the existing PII setting regardless
+of attachment mode. Passthrough is an explicit grant, never implied by disabling
+PII and never selected after extraction or PII fails. It does not imply local
+hosting, disable tracing, or guarantee native attachment support in the backend.
+Existing request-size and protocol limits still apply; extProc does not fetch
+file/image URLs on the passthrough path. Downstream handling remains the backend's
+responsibility. A failed or incomplete extraction, or required PII failure/block,
+stops the entire request without forwarding the original as a fallback.
+
+### Configuration And Compatibility
+
+The chart setting is `guardrails.llmPolicyEngine.models[].attachmentMode`, keyed
+by the model's public `name`. The version-1 trusted metadata retains the existing
+`models` ID-to-PII-boolean map and adds an optional sparse `attachment_modes` map.
+Unknown modes/IDs and passthrough combined with enabled PII fail closed at the
+consumer. Chart validation rejects invalid modes and the same PII combination.
+
+Chart `1.3.0` source omits the new map when no effective model explicitly configures
+a mode, preserving default renders for shipped extProc. **Deploy the new extProc
+consumer before configuring any explicit mode, including `block`.** Older strict
+consumers reject the new metadata field rather than ignore it. Omitted modes default
+to block in the new consumer; this does not retroactively change older runtimes.
+Neither PR publishes or pins a new extProc image.
+
+Selected catalog rows may carry an explicit mode, but keep their PII-enabled
+default. Clients should use the existing direct-model values/whole-list override
+mechanism rather than manually edit generated catalogs. A same-name direct model
+replacement can explicitly disable PII and opt into passthrough; it does not
+inherit a catalog attachment mode. These settings never grant model permissions.
+
+The initial extraction allowlist is PDF, DOCX, XLSX, PPTX, plain text, Markdown
+and CSV. In `extract` mode, standalone images/audio/video remain unsupported; a
+scanned PDF may produce internal page images. The extraction path strips image
+payloads, embedded objects,
 source-file URLs and hidden raw copies before preparing the chat-model request.
-With PII disabled, retained text may contain personal information and must not be
+With PII disabled, extracted text may contain personal information and must not be
 described as PII-sanitized. With PII enabled, preserve the existing policy's
 allow/transform/reroute/block behavior, rather than inventing mandatory redaction.
 
@@ -167,10 +202,12 @@ completed HTTP call alone must not be treated as successful extraction.
 ## Client Defaults And UX
 
 Base supplies validated defaults; client repositories may override them without
-code changes. Agreed starting limits are 20 MiB per file, five files and 40 MiB
+code changes. Planned extraction limits are 20 MiB per file, five files and 40 MiB
 total per request, and 200 pages total for paged documents. Client settings also
 control the remote inference endpoint/model and operational time/resource limits.
-Keep upload, decoded-byte and extracted-content limits distinct.
+Keep upload, decoded-byte and extracted-content limits distinct. These new
+extraction limits are not yet implemented and do not expand the current transport
+limits for passthrough.
 
 LibreChat should send raw documents where its existing provider-delivery settings
 allow it. Local text extraction is acceptable. Keep its stored originals and GUI
