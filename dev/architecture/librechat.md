@@ -76,15 +76,17 @@ connection attempts. Clients may change these limits through
 `frontendLibrechat.documentdb.maxPoolSize` and `maxConnecting` after reviewing
 the shared PostgreSQL capacity.
 
-## Proposed Voice Support
+## Optional Voice Support
 
-Voice support is under review in [Base PR #172](https://github.com/neurwerk/k8s_stack_base/pull/172)
+Voice configuration support is merged in [Base PR #172](https://github.com/neurwerk/k8s_stack_base/pull/172)
 and [Tooling PR #38](https://github.com/neurwerk/k8s_stack_tooling/pull/38), tracked
 by [Base issue #168](https://github.com/neurwerk/k8s_stack_base/issues/168).
-It is not adopted or enabled. The scope is configuration only, using existing
-LibreChat support, with no upstream code changes or custom runtime image.
+It is available on Base `main` for alpha clients; live reconciliation has not
+been verified and speech remains disabled by default. The scope is configuration
+only, using existing LibreChat support, with no upstream code changes or custom
+runtime image.
 
-The proposal keeps STT and TTS independently disabled until configured, uses an
+The configuration keeps STT and TTS independently disabled until configured, uses an
 explicit local IPv4 endpoint for STT, and requires separate approval for external
 TTS. Optional API keys use direction-specific ExternalSecrets, not ConfigMap
 values or the mandatory core runtime Secret. Ordinary typed chat remains available;

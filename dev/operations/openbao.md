@@ -248,15 +248,16 @@ There is no new key-update command, device enrollment, permission controller or
 gateway activation. Follow [WireGuard setup](wireguard.md#server-key-setup) for
 staging and the separate Mac-public-key approval and stop/update/start procedure.
 
-## Proposed Speech Credentials
+## Optional Speech Credentials
 
-[Tooling PR #38](https://github.com/neurwerk/k8s_stack_tooling/pull/38) proposes
+[Tooling PR #38](https://github.com/neurwerk/k8s_stack_tooling/pull/38) merged
 optional `librechat-stt` and `librechat-tts` managed credentials in package
-`0.2.14`, still at catalog schema `4`. This is not yet a released operational
-prerequisite. It requires compatible charts and separately authorized adoption;
-see [proposed LibreChat voice support](../architecture/librechat.md#proposed-voice-support).
+`0.2.14`, still at catalog schema `4`, at Tooling revision
+`0c2e02ddf18776530c1b7cd735327bf27570721b`. No package publication is implied by
+the merge. It requires compatible charts and separately authorized adoption;
+see [LibreChat voice support](../architecture/librechat.md#optional-voice-support).
 
-The proposed record is `frontend-librechat/external`, with separate `sttApiKey`
+The record is `frontend-librechat/external`, with separate `sttApiKey`
 and `ttsApiKey` fields. Both the selected direction and its authentication switch
 must be enabled in `librechat-product-values` before the tool prompts for a key.
 Bootstrap adds no speech prompts or records. Existing installations need an
@@ -267,7 +268,7 @@ Each update preserves sibling fields and refreshes only the selected
 It does not wait for the whole LibreChat application, allowing both keys to be
 supplied in sequence. Reloader handles rollout; check application readiness after
 all required keys are provisioned during the authorized deployment. No live key
-provisioning or reconciliation has been performed for this proposal.
+provisioning or reconciliation has been performed as part of this implementation.
 
 ## Update Provider Credentials
 
