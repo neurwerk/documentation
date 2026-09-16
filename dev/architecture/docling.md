@@ -135,6 +135,14 @@ Defaults request a 300-second document budget, 90-second model calls and a
 budgets; they are not hard job-cancellation guarantees. Future extProc must enforce
 bounded admission, upload/expanded-file/output limits and no blind retries.
 
+On normal shutdown, Uvicorn stops accepting connections and drains in-flight HTTP
+requests for up to `syncWaitSeconds`. Pod termination grace is derived from that
+value plus 30 seconds for cleanup (390 seconds by default). The HelmRelease uses
+a 70-minute ceiling to cover the largest permitted override (3660 seconds), cleanup
+and the five-minute startup probe budget. This is a maximum wait, not a fixed
+rollout delay. Native jobs can outlive an HTTP timeout; force deletion, crashes and
+work exceeding these budgets are not guaranteed to finish during shutdown.
+
 Fetched results have a 60-second removal delay. A scoped, nonconcurrent CronJob
 every five minutes clears completed results older than 600 seconds using the
 native authenticated cleanup API and verified TLS. It never deletes LibreChat
