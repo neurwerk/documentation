@@ -81,16 +81,17 @@ the shared PostgreSQL capacity.
 Voice support is under review in [Base PR #172](https://github.com/neurwerk/k8s_stack_base/pull/172)
 and [Tooling PR #38](https://github.com/neurwerk/k8s_stack_tooling/pull/38), tracked
 by [Base issue #168](https://github.com/neurwerk/k8s_stack_base/issues/168).
-It is not adopted or enabled. The current image does not enforce the proposed
-`speech.allowBrowserSTT` policy; the upstream request is
-[LibreChat issue #16000](https://github.com/danny-avila/LibreChat/issues/16000).
+It is not adopted or enabled. The scope is configuration only, using existing
+LibreChat support, with no upstream code changes or custom runtime image.
 
 The proposal keeps STT and TTS independently disabled until configured, uses an
 explicit local IPv4 endpoint for STT, and requires separate approval for external
 TTS. Optional API keys use direction-specific ExternalSecrets, not ConfigMap
 values or the mandatory core runtime Secret. Ordinary typed chat remains available;
-conversation mode is user-selected. Activation requires a reviewed image that
-blocks browser recognition, real client settings, and separate authorization.
+conversation mode is user-selected. Activation requires real client settings and
+separate authorization. Existing browser recognition remains unchanged and may
+use an external service; the local endpoint restriction applies only to configured
+server STT, not every speech path in the browser.
 
 Speech services receive requests directly from LibreChat, outside AgentGateway's
 PII processing. Submitted transcript text uses the normal model route and that
