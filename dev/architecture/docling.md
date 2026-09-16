@@ -5,6 +5,23 @@ Upstream API behavior was checked against Docling `2.127.0`; the final Docling,
 model and runtime pins remain implementation work. No server address or port is
 needed to begin implementation.
 
+## Implementation Tracking
+
+[Base #170](https://github.com/neurwerk/k8s_stack_base/issues/170) tracks the
+cross-repository work. The first implementation is
+[extProc PR #28](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/28):
+typed Chat/Responses attachments, including history, are rejected locally with
+HTTP 403 before optional PII dispatch. It does not call PII Engine for the block
+and preserves text-only bypass, arbitrary tool JSON and MCP behavior. This is a
+review-stage change, not a published image or deployed platform feature; all raw
+documents remain blocked until conversion is implemented.
+
+The remaining bounded tasks are:
+
+- [Gateway conversion #27](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/issues/27).
+- [Document PII contract #14](https://github.com/neurwerk/k8s_stack_pii_engine/issues/14).
+- [CPU service and client-overridable defaults #171](https://github.com/neurwerk/k8s_stack_base/issues/171).
+
 ## Deployment Boundary
 
 **Docling runs in its own CPU Pod inside Kubernetes. The document-reading vision
@@ -37,6 +54,20 @@ The client can set the GPU server IP/hostname and port later. "External" means
 outside the Docling Pod, not a public processing provider. The model server can
 be an OpenAI-compatible deployment such as vLLM or Ollama. Its actual model must
 support image inputs and the selected Docling output format.
+
+The operator owns the external server, targeting Granite-Docling-258M served by
+llama.cpp. The in-cluster worker can use upstream `docling-serve-cpu`, avoiding a
+new first-party service repository. The researched candidate is
+[docling-serve v1.33.0](https://github.com/docling-project/docling-serve/releases/tag/v1.33.0),
+whose lockfile selects `docling-slim 2.127.0` and `docling-core 2.96.1`; the image
+digest is not yet verified or adopted. Use the local execution engine with no UI
+or persistent queue, and a fixed administrator-owned remote VLM preset.
+
+The gateway constructs conversion options rather than forwarding caller options:
+one uploaded file, in-body JSON output, no URL sources or callbacks. Upstream
+returns the document under `document.json_content` in a status/error envelope.
+Its synchronous wait timeout does not cancel the underlying job; worker deadlines,
+bounded admission and cleanup must account for that, without blind retries.
 
 PDFs use the remote VLM conversion pipeline. Formats such as DOCX, XLSX, PPTX,
 plain text, Markdown and CSV use their format-specific parsing paths; they are
