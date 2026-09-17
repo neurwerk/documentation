@@ -75,7 +75,7 @@ Current workload-specific external allowances are:
 | LibreChat application | The same IPv4 TCP `443` scope for external HTTPS dependencies in both canonical endpoint routing modes |
 | LibreChat RAG API | Optional use of the same IPv4 TCP `443` scope |
 | Code Interpreter package initializer | The same IPv4 TCP `443` scope for pinned downloads |
-| Keycloak Active Directory federation | Client-declared IPv4 CIDRs on TCP `636`, only when federation is enabled |
+| Keycloak Active Directory federation | Client-declared IPv4 `egressCidrs` on only the selected TCP port: `636` for LDAPS, or staged explicit plaintext LDAP on `389`; only when federation is enabled |
 | Keycloak SMTP | Public IPv4 destinations on the configured SMTP port, only when SMTP is enabled |
 | Keycloak initial-administrator email Job | Public IPv4 destinations on TCP `443` for TLS-verified issuer readiness in `public-dns` mode, only when SMTP and the external Gateway are enabled |
 | Alertmanager SMTP | Public IPv4 destinations on the configured SMTP port, only when email is enabled |
@@ -83,6 +83,13 @@ Current workload-specific external allowances are:
 These IP rules are not FQDN allowlists. cert-manager and AgentGateway can reach
 external destinations without an egress NetworkPolicy restriction under the
 current manifests.
+
+Active Directory's `allowInsecureLdap` defaults to `false`; `ldap://host:389`
+requires explicit opt-in and the
+[staged runtime gate](../authentication/keycloak.md#staged-runtime-gate).
+The directory rule never opens both ports or adds directory egress while
+disabled. CIDR restrictions do not encrypt plaintext LDAP or verify directory
+identity; verified LDAPS on `636` remains the default.
 
 ## Canonical Endpoint Egress
 
@@ -116,7 +123,7 @@ actual selectors again if that coverage changes.
 `auth-keycloak` is default-deny. Keycloak ingress permits Traefik, configuration
 workloads, Studio, the API-key bridge, and the exact AgentGateway data-plane and
 controller identities. Egress permits DNS, verified-TLS access to
-`postgres-auth`, and the enabled LDAPS or SMTP destinations described above.
+`postgres-auth`, and the enabled LDAP(S) or SMTP destinations described above.
 
 `infra-postgres-auth` is default-deny. Its TLS PostgreSQL listener accepts only
 Keycloak and its provisioning Job.

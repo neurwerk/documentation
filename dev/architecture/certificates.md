@@ -161,18 +161,28 @@ and outbound Keycloak issuer trust are separate. See
 
 ## Microsoft Active Directory CA Trust
 
-When Active Directory federation is enabled, the client repository provides the
-public CA certificate at `apps/keycloak/active-directory-ca.pem`. Its
+When Active Directory federation is enabled with LDAPS, the client repository
+provides the public CA certificate at `apps/keycloak/active-directory-ca.pem`. Its
 Kustomization publishes ConfigMap `auth-keycloak-active-directory-ca` with key
-`ca.crt` in `auth-keycloak`. Disabled federation must not create this ConfigMap.
+`ca.crt` in `auth-keycloak` by default (`caConfigMapName` and `caKey`). Disabled
+federation and plaintext LDAP must not generate this unused AD trust ConfigMap.
 
-Only the Keycloak server mounts this ConfigMap. `KC_TRUSTSTORE_PATHS` adds the
-mounted CA to Keycloak's system truststore; it does not replace the Java default
-roots. The CA is not added to the internal CA, OpenBao bundle, host trust store,
-other workloads, or a trust-manager bundle. The Active Directory CA private key
-must never enter Git, OpenBao, Kubernetes, or platform certificate controllers.
+Only the Keycloak server mounts this ConfigMap, and only for enabled LDAPS.
+`KC_TRUSTSTORE_PATHS` adds the mounted CA to Keycloak's system truststore; it does
+not replace the Java default roots. The CA is not added to the internal CA,
+OpenBao bundle, host trust store, other workloads, or a trust-manager bundle.
+The Active Directory CA private key must never enter Git, OpenBao, Kubernetes,
+or platform certificate controllers.
 
-Before enabling federation or accepting a CA rotation:
+The AD CA mount, `KC_TRUSTSTORE_PATHS` and CA reload annotation are omitted for
+disabled federation or plaintext LDAP. Database CA trust and branding/logo reload
+handling remain independent. Plain `ldap://host:389` requires explicit
+`allowInsecureLdap: true` (default `false`) and the
+[staged runtime gate](../authentication/keycloak.md#staged-runtime-gate); it
+exposes credentials and directory data without TLS. It is not StartTLS, a
+certificate-verification bypass or an automatic fallback from LDAPS.
+
+Before enabling LDAPS federation or accepting a CA rotation:
 
 1. Verify the expected CA fingerprint through an independent, client-approved
    channel.

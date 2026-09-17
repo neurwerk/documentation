@@ -161,10 +161,11 @@ remain separate from implementation and the published baseline described below.
 See [Forgejo authentication](forgejo.md#roles-and-admission) for the native
 role boundary, restricted OIDC claim, and mandatory manual offboarding.
 
-The `neurwerk-` prefix is intentional: it is the supported Active Directory
-namespace and satisfies federation prefix validation. Existing application
-roles retain their supported permissions; the platform-admin composition is
-described below. Clients inherit the platform group
+The `neurwerk-` prefix is intentional for canonical Keycloak groups and legacy
+same-name Active Directory federation. The staged `groupMappings` mode accepts
+other AD source names without renaming these canonical parents. Existing
+application roles retain their supported permissions; the platform-admin
+composition is described below. Clients inherit the platform group
 definitions and application mappings rather than copying them. Clients own
 local or directory memberships, directory settings, and explicit model and MCP
 grants.
@@ -362,35 +363,156 @@ username creates a different user and leaves the previous user in place.
 Federation is disabled by default. When enabled, Keycloak configures a managed
 provider named `microsoft-active-directory` with these rules:
 
-- connections use LDAPS on port `636` with the client-provided CA;
+- connections default to verified LDAPS on port `636` with the client-provided
+  CA; plaintext LDAP on port `389` needs the explicit opt-in described below;
 - the provider is read-only and never writes users or groups to Active
   Directory;
 - the cache policy is `NO_CACHE`, and periodic full and changed-user syncs are
   disabled;
 - eligible users must have a direct `memberOf` value for at least one approved
-  group;
-- approved groups are synchronized as flat children of `/access`;
+  source group; nested AD membership does not grant access;
+- built-in `READ_ONLY` group mappers resolve directory membership, without a
+  plugin or copying that membership into local Keycloak memberships;
 - first name, last name, and `mail` are always read from Active Directory;
 - `mail` is mapped to a verified Keycloak email;
 - the standard Active Directory account-control mapper reads the current
   enabled state.
 
-Approved group names must be unique, lowercase, start with `neurwerk-`, and
-already exist below `/access`. The reconciliation Job tests the LDAP connection
-and bind, configures the provider and mappers, synchronizes the approved groups,
-and verifies each group's LDAP distinguished name.
+### Staged Runtime Gate
+
+Server and Active Directory configuration charts `1.1.0` add `groupMappings`
+and `allowInsecureLdap`. Tooling `0.7.0` source implements both, but its image
+publication, verification and pin adoption are still pending. Published pins
+remain unchanged; chart support is not evidence of a released or deployed runtime.
+
+Selecting mappings or plaintext LDAP requires both charts to receive
+`k8sTools.image` as `ghcr.io/neurwerk/k8s-stack-tooling:X.Y.Z`, version
+`>=0.7.0`, optionally followed by `@sha256:<64 lowercase hex>`. Moving tags,
+prereleases, digest-only references and other repositories are rejected. This
+render-time gate checks the declared version, not whether the image is published.
+Disabled federation and legacy LDAPS remain renderable with the existing pins.
+Image publication, platform release, client adoption and live verification are
+separate authorized steps; none is established by this source change.
+
+### Group Selection
+
+When enabled, set exactly one non-empty list under `authKeycloak.activeDirectory`:
+
+- `groupNames`: legacy same-name mode. Names are unique, lowercase, at most 64
+  characters and match `^neurwerk-[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$`. Each group
+  must already exist as a flat child of `/access`. Legacy verification requires
+  one case-insensitively exact expected DN in `attributes.LDAP_ENTRY_DN`.
+- `groupMappings`: each entry contains only `sourceName` and `targetParent`.
+  Sources are AD CNs of 1-64 characters; case, underscores, internal spaces and
+  LDAP punctuation are preserved. Controls, outer whitespace, placeholders and
+  case-insensitive duplicate sources are rejected. Target paths must be unique,
+  exact existing canonical groups from the 13-group catalog, or the two optional
+  Forgejo groups when present. The other list must be omitted or `[]`.
+
+For example, this non-secret selection maps `CORP_STUDIO` to Studio access:
+
+```yaml
+authKeycloak:
+  activeDirectory:
+    groupNames: []
+    groupMappings:
+      - sourceName: CORP_STUDIO
+        targetParent: /access/neurwerk-studio-users
+```
+
+This is only the group selection, not a complete enablement configuration. It
+produces `/access/neurwerk-studio-users/CORP_STUDIO`. Members inherit the
+canonical parent's existing roles; the parent and its role mappings are not
+renamed or rewritten. Full-path group claims report the actual child membership,
+not a copied membership in `/access/neurwerk-studio-users`. Policies that compare
+group paths must use the actual child path rather than infer parent membership
+from inherited roles.
+
+Mapping mode uses one built-in `READ_ONLY` mapper per source. Each mapping
+selects exactly one source at
+`CN=<escaped sourceName>,<groupsDn>`. For `groupsDn: OU=Groups,DC=example,DC=com`,
+the example source is `CN=CORP_STUDIO,OU=Groups,DC=example,DC=com`. A source in a
+different OU is not selected merely because it has the same CN. Tooling escapes
+DNs and LDAP filters separately and uses both exact `cn` and `distinguishedName`
+filters. Eligibility uses direct `memberOf`; each mapper uses direct `member`
+lookup (`LOAD_GROUPS_BY_MEMBER_ATTRIBUTE`), not nested AD group expansion.
+
+Reconciliation tests the connection and bind, verifies the existing canonical
+parents, and requires each mapper sync to process exactly one source with no
+failed or removed groups. It reads back mapper settings and the real parent and
+child IDs, names and paths, including unchanged parent IDs. A missing source or
+wrong child fails reconciliation. Keycloak `26.7.2` binds these mapped groups by
+parent and name; mapping mode neither requires nor fabricates `LDAP_ID` or
+`LDAP_ENTRY_DN` attributes as proof of that binding.
+
+### Transport And Credentials
+
+`allowInsecureLdap` defaults to `false`. Use `ldaps://ad.example.com:636` with
+verified CA and hostname trust. Plain `ldap://ad.example.com:389` is accepted
+only with `allowInsecureLdap: true` and sends bind credentials, user passwords and
+directory data without TLS. There is no StartTLS, automatic downgrade or
+certificate-verification bypass. Other ports, URL credentials, paths, queries
+and fragments are rejected. Setting the opt-in alone does not change an LDAPS URL.
+
+Both transports use the same `auth-keycloak-active-directory-secret` and
+OpenBao fields. The Keycloak server's directory egress allows only the selected
+port to `egressCidrs`, and only while enabled. Only enabled LDAPS mounts the AD
+CA and configures its truststore and CA reload watch; plaintext LDAP does not.
+
+### Reconciliation And Retry
+
+During every mapping reconciliation and transitions to or from legacy mode,
+Tooling temporarily disables the provider until all checks succeed. Plan for an
+interruption to federated sign-ins and keep an independent local break-glass
+administrator available. Run only one reconciler for a realm at a time.
+
+Ownership and retry state use native component `subType`, not custom config
+keys: mapped mappers use `k8s-stack-tooling.group-mapping.v1`, and the provider
+uses `k8s-stack-tooling.group-reconciliation-pending.v1` while disabled, then
+`k8s-stack-tooling.active-directory.v1` when ready. Unrelated subtypes, a manual
+mapper overlapping `/access`, or a legacy mapper changed to `IMPORT` require
+operator review rather than takeover.
+
+Preflight failures leave the previous state intact. Partial failures after the
+provider is disabled leave it disabled for retry; fix the reported problem and
+rerun reconciliation rather than manually enabling a partial mapping set. If
+final activation cannot be verified, Tooling attempts to disable it again and
+reports when even that cannot be verified; this requires operator review.
+
+Group-mapper cleanup removes only reserved, owned mappers under this provider.
+It never deletes canonical groups, source-named children, unrelated local groups,
+roles or local memberships. Removing a mapping removes its dynamic directory
+grants on reevaluation, not existing local grants or already-issued tokens and
+application sessions. `NO_CACHE` is not immediate session revocation or permission
+for indefinite use during a directory outage: tokens retain their expiry and
+application session rules still apply.
 
 ### Enable Federation
 
-1. Set `authKeycloak.activeDirectory.enabled: true` in
-   `client_*/apps/keycloak/values.yaml`.
-2. Configure the LDAPS URL, user and group DNs, username attribute, approved
-   groups, and exact IPv4 egress CIDRs.
-3. Add the public CA certificate as
+Use this sequence only for an authorized deployment:
+
+1. For mappings or plaintext LDAP, first publish and verify a compatible Tooling
+   image through the separate release process, then adopt its reviewed pin in
+   both charts. Review the selected platform release and migration notes; do not
+   treat a source version or a successful render as publication.
+2. Confirm the canonical target groups and roles exist, each AD source is
+   directly under `groupsDn`, and a local break-glass login works. Review local
+   memberships and conflicting mappers before changing an existing provider.
+3. In `client_*/apps/keycloak/values.yaml`, configure the URL, user and group DNs,
+   `usernameAttribute` (`sAMAccountName` or `userPrincipalName`), one group list,
+   `emailVerified: true` and exact IPv4 `egressCidrs`. Keep
+   `allowInsecureLdap: false` unless plaintext has been explicitly approved.
+4. For LDAPS only, add the public CA certificate as
    `client_*/apps/keycloak/active-directory-ca.pem`. The client Kustomization
    must publish it as ConfigMap `auth-keycloak-active-directory-ca`, key
-   `ca.crt`, in `auth-keycloak`.
-4. Store the bind DN and credential with `stack-setup`; never add them to Git or
+   `ca.crt`, in `auth-keycloak`; verify its fingerprint and hostname trust.
+5. Apply the reviewed `enabled: true` product values, server trust/egress and
+   enabled secret-sync resources. The credential command must see that enabled
+   selection in `auth-keycloak/keycloak-product-values`; a local file change
+   alone is insufficient. A first configuration Job may wait for its bind Secret.
+6. If credentials are missing or need rotation, store the bind principal (DN or
+   UPN) and credential with the following operator command. Reuse an existing
+   valid pair when only changing mappings; never add credentials to Git or
    command arguments.
 
 ```bash
@@ -400,13 +522,25 @@ uv run stack-setup secret set active-directory \
   --client <client-name>
 ```
 
-The command is accepted only after the rendered client values enable
-federation. It updates OpenBao, refreshes the ExternalSecret, and reconciles the
-Active Directory HelmRelease.
+The command's enabled-only semantics are unchanged. It updates OpenBao,
+refreshes the ExternalSecret, and reconciles the Active Directory HelmRelease;
+it does not enable federation or bypass the runtime gate. Disabled selection is
+rejected before prompting or opening OpenBao. Missing or failed enabled consumers
+remain fatal.
+
+After reconciliation, inspect current Flux and HelmRelease conditions, the
+Keycloak Pod, warning events and safe Job logs without printing credentials.
+Confirm provider activation, exact mapped child paths and inherited roles, an
+intended direct member's access, and denial for an unapproved or nested-only
+member. Check affected applications and preserve unrelated users, local
+memberships and persistent data. Reuse accepted feature-test evidence rather
+than requiring a disposable server; live verification remains a separate
+operator action, not a claim made by this document update.
 
 Disabling federation disables an existing managed provider. It also removes the
-CA mount and LDAPS egress from the Keycloak Pod, and the configuration Job does
-not read Active Directory credentials.
+AD CA mount/watch and directory egress from the Keycloak Pod. The disabled
+configuration Job omits directory inputs and bind credentials; it does not
+delete groups, local memberships or stored OpenBao credentials.
 
 See [Certificates And Trust](../architecture/certificates.md#microsoft-active-directory-ca-trust)
 and [OpenBao Operations](../operations/openbao.md#update-provider-credentials).

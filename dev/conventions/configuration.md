@@ -162,9 +162,30 @@ A disabled chart feature may use validation placeholders only when guarded by
 resources.
 
 When Active Directory federation is enabled, the client repository provides the
-real LDAPS URL, DNs, approved groups, IPv4 egress CIDRs, and public CA PEM. The
-bind DN and credential remain in OpenBao at `auth-keycloak/external`. A disabled
-client must not generate the `auth-keycloak-active-directory-ca` ConfigMap.
+real directory URL, user/group DNs, group selection and IPv4 `egressCidrs` in
+`apps/keycloak/values.yaml`. Under `authKeycloak.activeDirectory`, exactly one of
+`groupNames` or `groupMappings` must be non-empty; both default to `[]`. Legacy
+`groupNames` uses same-name lowercase `neurwerk-` groups. Each mapping contains
+only `sourceName` and `targetParent`, for example
+`{sourceName: CORP_STUDIO, targetParent: /access/neurwerk-studio-users}`. Sources
+must be unique ignoring case and targets must be unique existing canonical
+paths; mappings do not override platform groups or role definitions.
+
+`allowInsecureLdap: false` is the default. Verified `ldaps://ad.example.com:636`
+requires the client public CA PEM and its ConfigMap. Plain
+`ldap://ad.example.com:389` requires `allowInsecureLdap: true`; it sends credentials
+and directory data without TLS, not through StartTLS. Only enabled LDAPS uses
+`caConfigMapName` and `caKey`. A disabled or plaintext client must not generate
+the `auth-keycloak-active-directory-ca` ConfigMap. Egress is enabled only for the
+selected directory port and configured CIDRs.
+
+The bind principal and credential remain in OpenBao at `auth-keycloak/external`
+and use the same Secret for both transports and group modes. Mappings and
+plaintext require the staged charts `1.1.0` and compatible Tooling `>=0.7.0`
+image contract; `0.7.0` source is not publication or adoption. Do not change pins
+as part of a group-only values edit before the image is published and verified.
+See [Keycloak federation](../authentication/keycloak.md#active-directory-federation)
+for source-name validation, actual child paths and the exact runtime gate.
 
 ## Add a Setting
 

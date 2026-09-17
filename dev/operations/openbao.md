@@ -359,8 +359,27 @@ ExternalSecrets, and reconciles affected HelmReleases.
 
 SMTP credentials are copied to isolated Keycloak and monitoring records.
 Active Directory updates are allowed only when federation is enabled in the
-selected client's rendered values. Its bind DN and credential remain only in
-`auth-keycloak/external`.
+selected client's rendered `auth-keycloak/keycloak-product-values` ConfigMap.
+The boolean `authKeycloak.activeDirectory.enabled` remains the selector; changing
+`groupMappings` or `allowInsecureLdap` neither enables federation nor changes this
+command. Disabled selection is rejected before prompting or opening OpenBao.
+
+For both group modes and both transports, the bind principal (DN or UPN) and
+credential use the existing `activeDirectoryBindDn` and
+`activeDirectoryBindCredential` fields in `auth-keycloak/external`, preserving
+SMTP sibling fields. External Secrets delivers the same
+`auth-keycloak-active-directory-secret`. No new provider record or credential
+rotation is required for a mapping-only change. Missing or failed enabled
+ExternalSecret and `keycloak-active-directory` HelmRelease consumers remain fatal.
+
+Before credential provisioning, apply the reviewed enabled product values and
+required server trust/egress and secret-sync resources. For mappings or plaintext
+LDAP, first satisfy the separate compatible-image publication and adoption gate;
+the secret command cannot bypass it. Follow the
+[federation operator sequence](../authentication/keycloak.md#enable-federation),
+then verify reconciliation without printing Secret values. Tooling runtime
+`0.7.0` is a separate package from this workstation CLI and is still pending
+image publication; no new OpenBao schema or bootstrap ceremony is implied.
 
 ## Verify Kubernetes State
 

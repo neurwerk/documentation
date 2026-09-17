@@ -23,15 +23,30 @@ When Microsoft Active Directory federation is enabled:
 
 - Active Directory owns the user's password, account state, email address, and
   direct group membership.
-- Keycloak accesses Active Directory through read-only LDAPS with `NO_CACHE`.
-- Only direct membership in approved `neurwerk-` groups is synchronized under
-  Keycloak's `/access` group.
+- Keycloak uses read-only federation with `NO_CACHE` and verified LDAPS by
+  default. Plaintext LDAP requires explicit `allowInsecureLdap: true` and the
+  staged runtime gate below.
+- Exactly one group list selects direct AD memberships: legacy `groupNames`
+  uses same-name `neurwerk-` groups below `/access`; staged `groupMappings`
+  creates source-named children under existing canonical groups. Children
+  inherit parent roles, but full-path group claims retain the actual child
+  paths. Nested AD membership does not grant access.
+- Built-in `READ_ONLY` mappers resolve membership without plugins or local
+  membership copies.
 - Platform defaults define the canonical groups and application role mappings;
   clients inherit them and own memberships, directory settings, and explicit
   model and MCP grants.
 - Authentication fails closed when Keycloak cannot verify the current Active
   Directory state.
 - A local Keycloak break-glass administrator remains available for recovery.
+
+Mapping and plaintext support is implemented in Tooling `0.7.0` source and
+Keycloak charts `1.1.0`, but runtime publication and pin adoption are pending;
+published pins remain unchanged. Mapping reconciliation and transitions disable
+the provider until validation succeeds; partial failures leave it disabled for
+retry. Existing tokens and application sessions are not immediately revoked.
+See [Active Directory Federation](keycloak.md#active-directory-federation) for
+the exact image gate, operator sequence and retry rules.
 
 Application roles and AgentGateway permissions are separate. Membership in a
 broad LLM access group does not grant access to Studio, LibreChat, Dify, or
