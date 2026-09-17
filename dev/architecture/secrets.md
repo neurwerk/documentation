@@ -171,6 +171,27 @@ private key stays in the Mac WireGuard app. See
 [WireGuard setup](../operations/wireguard.md#server-key-setup) for exact selection
 and readiness gates; no runtime selection follows from source availability.
 
+## Optional Docling
+
+The selected `stack-setup` `0.2.15` catalog generates a missing service API key at
+`docling/internal:apiKey` and copies it exactly to
+`monitor-agentgateway-extproc/internal:doclingApiKey`. Conflicting copies and
+invalid existing keys stop reconciliation without rotating them.
+The operator separately supplies `docling/external:inferenceToken` through the
+hidden `docling-inference` provider prompt, which preserves sibling fields.
+
+The optional Base secret-sync package delivers only the approved fields:
+
+- `docling/docling-api`, key `api-key`;
+- `docling/docling-inference`, key `token`;
+- `monitor-agentgateway-extproc/monitor-agentgateway-extproc-docling-secret`, key `api-key`.
+
+Each namespace has its own read-only OpenBao role and store. extProc cannot read
+the upstream inference token. Routine secret-operator updates permit the exact
+Docling external record, not either internal API-key record.
+See [Docling setup](../operations/openbao.md#optional-docling-credentials) for
+selection, custody and credential-only staging without application startup.
+
 ## Safety Rules
 
 - Never commit secret values, credentials, private keys, recovery material, or

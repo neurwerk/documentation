@@ -270,6 +270,58 @@ supplied in sequence. Reloader handles rollout; check application readiness afte
 all required keys are provisioned during the authorized deployment. No live key
 provisioning or reconciliation has been performed as part of this implementation.
 
+## Optional Docling Credentials
+
+[Tooling PR #42](https://github.com/neurwerk/k8s_stack_tooling/pull/42) adds
+`openbao-stack-setup` `0.2.15` at revision
+`79a3c2eb98ea1e407376a95f83d2441576d719f6`, still at catalog schema `4`.
+Use that exact source revision for the optional Docling package; the global
+`0.2.11` prerequisite does not contain this catalog. The operator runs these
+commands on the trusted workstation, not through an agent or Kubernetes Job.
+
+Stage `releases/namespaces/docling`, client product values and
+`releases/docling/secret-sync` first, without composing the Docling application.
+In `docling/docling-product-values`, the `values.yaml` data must contain:
+
+```yaml
+docling:
+  enabled: true
+  apiKeySecretRef: {name: docling-api, key: api-key}
+  inference:
+    tokenSecretRef: {name: docling-inference, key: token}
+```
+
+This selector enables credential preparation only while the application package
+is unselected. Missing/disabled selection adds no internal records, roles or
+consumer refreshes. Invalid selection or mismatched references stops the CLI
+before confirmation or secret interaction. Deselection does not delete credentials.
+
+For an existing installation, from `tooling/cli_tools/openbao_stack_setup` at the
+revision above, follow the normal two-custodian procedure:
+
+```bash
+uv run --frozen stack-setup reconcile \
+  --context <kube-context> --client <client-name> \
+  --custodian-package <first-secure-package> \
+  --custodian-package <second-secure-package>
+
+uv run --frozen stack-setup secret set docling-inference \
+  --context <kube-context> --client <client-name>
+```
+
+Reconciliation generates the missing service API key and copies it to extProc's
+isolated record. It preserves existing values and rejects invalid keys or copy
+conflicts without rotation. It performs normal catalog/infrastructure convergence,
+but does not wait for the inference token or start Docling.
+The second command collects the upstream token in a hidden prompt and refreshes
+only `docling-inference`; it does not force application reconciliation.
+Do not put tokens or custody material in arguments, Git, logs or chat.
+
+The two SecretStores and three ExternalSecrets can remain NotReady until these
+steps complete. Verify their conditions and target Secret metadata, never values.
+This prepares credentials only; gateway conversion, server settings and application
+activation remain separate prerequisites. See [Docling architecture](../architecture/docling.md).
+
 ## Update Provider Credentials
 
 ```bash
@@ -286,6 +338,7 @@ Supported providers are:
 - `route53`
 - `smtp`
 - `active-directory`
+- `docling-inference` (selected optional Docling only, from `0.2.15`)
 
 The CLI collects values through hidden terminal prompts, updates approved
 OpenBao records with compare-and-set writes, refreshes the relevant

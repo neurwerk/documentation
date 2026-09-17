@@ -1,7 +1,7 @@
 # Docling Attachments (Planned)
 
-Status: attachment-mode controls are merged but not released; the CPU service is
-a disabled source addition under review. End-to-end extraction is not implemented
+Status: attachment-mode controls, the disabled CPU service and optional credential
+delivery are merged. End-to-end extraction is not implemented
 or deployed. The upstream service uses Docling `2.127.0`; the operator's external
 model/runtime and client endpoint settings remain separate.
 
@@ -22,7 +22,11 @@ The remaining bounded tasks are:
 
 - [Gateway conversion #27](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/issues/27).
 - [Document PII contract #14](https://github.com/neurwerk/k8s_stack_pii_engine/issues/14).
-- [CPU service PR #175](https://github.com/neurwerk/k8s_stack_base/pull/175), implementing [#171](https://github.com/neurwerk/k8s_stack_base/issues/171).
+
+The CPU service in [Base PR #175](https://github.com/neurwerk/k8s_stack_base/pull/175)
+is merged, closing [#171](https://github.com/neurwerk/k8s_stack_base/issues/171).
+Credential delivery is merged in [Base PR #177](https://github.com/neurwerk/k8s_stack_base/pull/177),
+with the operator CLI in [Tooling PR #42](https://github.com/neurwerk/k8s_stack_tooling/pull/42).
 
 The mode producer is merged in [Base PR #174](https://github.com/neurwerk/k8s_stack_base/pull/174),
 closing [#173](https://github.com/neurwerk/k8s_stack_base/issues/173).
@@ -86,9 +90,10 @@ bounded admission and cleanup must account for that, without blind retries.
 
 ## Disabled Service Package
 
-Base owns `charts/docling/` and three optional, excluded packages:
+Base owns `charts/docling/` and four optional, excluded packages:
 
 - `releases/namespaces/docling`: namespace and default-deny policy.
+- `releases/docling/secret-sync`: namespace-local OpenBao stores and explicit credential fields.
 - `releases/docling/reloader`: opt-in values extending the existing Reloader's
   watch list and scoped RBAC to `docling`; no second controller.
 - `releases/docling/app`: HelmRelease, local defaults and shared attachment limits.
@@ -108,10 +113,22 @@ contains `ca.crt` and sets `REQUESTS_CA_BUNDLE`, replacing Requests' root bundle
 
 `docling.apiKeySecretRef` supplies the private service's `X-Api-Key` credential.
 `docling.inference.tokenSecretRef` supplies a separate upstream Bearer credential.
-Both are existing namespace-local Secret references; this change creates no secret
-values, OpenBao roles or ESO records. Approved credential delivery and the future
-extProc client credential remain enablement prerequisites, not manual Secret
-manifests to commit in client repositories.
+The optional secret-sync package delivers `docling-api:api-key` and
+`docling-inference:token` in the Docling namespace. extProc receives only a copy of
+the service API key in `monitor-agentgateway-extproc-docling-secret:api-key`.
+Its OpenBao role cannot read the Docling namespace's upstream token.
+
+The operator uses `openbao-stack-setup` `0.2.15` from Tooling revision
+`79a3c2eb98ea1e407376a95f83d2441576d719f6`. Its canonical selector is
+`docling.enabled: true` in `docling/docling-product-values`, with the exact Secret
+references above. This permits credential-only staging: compose the namespace,
+values and secret-sync resources, but leave the application package unselected.
+Other namespaces' shared enable flags and attachment modes stay unchanged.
+Secret-sync can remain NotReady until the operator completes setup; normal
+applications must not depend on its readiness at this stage.
+See [Docling credential setup](../operations/openbao.md#optional-docling-credentials)
+for the reconciliation and hidden-prompt commands. No manual Secret manifests
+belong in client repositories, and credential staging does not enable extraction.
 
 A small mounted startup script injects the upstream token into the custom
 `default` preset before importing Docling. Upstream has no native config-file
