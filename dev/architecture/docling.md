@@ -27,16 +27,19 @@ The CPU service in [Base PR #175](https://github.com/neurwerk/k8s_stack_base/pul
 is merged, closing [#171](https://github.com/neurwerk/k8s_stack_base/issues/171).
 Credential delivery is merged in [Base PR #177](https://github.com/neurwerk/k8s_stack_base/pull/177),
 with the operator CLI in [Tooling PR #42](https://github.com/neurwerk/k8s_stack_tooling/pull/42).
+Explicit standard CPU selection is merged in [Base PR #179](https://github.com/neurwerk/k8s_stack_base/pull/179),
+with the CPU-aware CLI in [Tooling PR #44](https://github.com/neurwerk/k8s_stack_tooling/pull/44).
 
 The mode producer is merged in [Base PR #174](https://github.com/neurwerk/k8s_stack_base/pull/174),
 closing [#173](https://github.com/neurwerk/k8s_stack_base/issues/173).
 
 ## Deployment Boundary
 
-**Docling runs in its own CPU Pod inside Kubernetes. The document-reading vision
-model runs on the internal GPU VM and is called by Docling over an API.** Do not
-deploy the whole Docling service on that VM or require a GPU on the Docling Pod
-for this design.
+**Docling runs in its own CPU Pod inside Kubernetes.** Clients explicitly select
+`docling.inference.mode: remote` (the default) or `cpu`. Remote mode calls the
+operator's vision-model server; CPU mode runs standard OCR, layout and table
+extraction inside the existing Pod. Neither mode needs a GPU on that Pod, and
+there is no automatic failover or retry on the other mode.
 
 The following flow applies to `extract` mode. `passthrough` instead forwards the
 original request directly to the selected chat backend, without Docling or PII.
@@ -46,8 +49,8 @@ LibreChat
   -> AgentGateway / extProc: authenticate, authorize, validate attachments
   -> Docling service (Kubernetes CPU Pod)
        -> parse document / render PDF pages
-       -> private GPU inference endpoint (internal VM)
-       <- extracted page content
+       -> remote: private vision-model endpoint
+          OR cpu: local OCR, layout and table models
        -> assemble DoclingDocument JSON
   <- validated document result
   -> PII Engine only when enabled for the destination
@@ -60,7 +63,7 @@ The two service addresses have different purposes:
 | Connection | Purpose | Configuration ownership |
 | --- | --- | --- |
 | Gateway processing -> Docling Kubernetes Service | Convert an allowed document into structured data | Platform service wiring |
-| Docling -> GPU inference server | Read rendered pages using a compatible vision-language model (VLM) | Client-owned URL, model settings and trust/auth references |
+| Docling -> GPU inference server (remote mode only) | Read rendered pages using a compatible vision-language model (VLM) | Client-owned URL, model settings and trust/auth references |
 
 The client can set the GPU server IP/hostname and port later. "External" means
 outside the Docling Pod, not a public processing provider. The model server can
@@ -78,9 +81,35 @@ whose lockfile selects `docling-slim 2.127.0`, `docling-core 2.96.1` and
 It includes amd64 and arm64; the amd64 manifest is
 `sha256:e034edf2914d56503b6c968891e8c8cffb0b749708c42740052b8aab383e1bfa`,
 and its revision label matches source `27fa2aa9638e449d7fcd4364ffcde8d9a47bc4eb`.
-Only registry metadata was inspected; no container or GPU inference was run.
-Use the local task engine with no UI or persistent queue, and the fixed
-administrator-owned remote VLM preset. There is no CPU-inference fallback.
+Registry metadata and the pinned upstream build/runtime source were inspected;
+no live extraction was run. Use the local task engine with no UI or persistent
+queue. Remote mode keeps the fixed administrator-owned VLM preset.
+
+### CPU Selection
+
+```yaml
+docling:
+  inference:
+    mode: cpu
+```
+
+Chart `0.2.0` uses the same pinned image and its baked Heron layout, TableFormer v1
+accurate and RapidOCR ONNX models. `DOCLING_DEVICE=cpu` forces CPU execution;
+runtime downloads stay off and no model volume or second server is added.
+Remote services, configured VLM engines, inference-token/CA mounts and inference
+egress are absent in CPU mode, even if unused remote settings remain in values.
+The internal API key and HTTPS Service remain required.
+
+Trusted gateway CPU requests select `pipeline=standard`, `ocr_preset=rapidocr`,
+`do_ocr=true` and `do_table_structure=true`, with enrichment flags false and
+`ocr_lang` unset. This uses the baked default OCR checkpoint; other language or
+model selections may need artifacts not in the image. Native legacy VLM options
+still exist, so these settings are not a universal standard-only API filter.
+Only trusted gateway code may choose conversion options.
+
+CPU results can differ from vision-model results and large documents may take
+longer. Existing CPU, memory and time limits remain client-configurable. Selecting
+CPU does not enable uploads or finish the pending gateway integration.
 
 The gateway constructs conversion options rather than forwarding caller options:
 one uploaded file, in-body JSON output, no URL sources or callbacks. Upstream
@@ -90,10 +119,11 @@ bounded admission and cleanup must account for that, without blind retries.
 
 ## Disabled Service Package
 
-Base owns `charts/docling/` and four optional, excluded packages:
+Base owns `charts/docling/` and these optional, excluded packages:
 
 - `releases/namespaces/docling`: namespace and default-deny policy.
-- `releases/docling/secret-sync`: namespace-local OpenBao stores and explicit credential fields.
+- `releases/docling/secret-sync`: remote-mode credential delivery, including the inference token.
+- `releases/docling/secret-sync/internal`: CPU-mode delivery of only the internal API key and its extProc copy; select this or the remote package, not both.
 - `releases/docling/reloader`: opt-in values extending the existing Reloader's
   watch list and scoped RBAC to `docling`; no second controller.
 - `releases/docling/app`: HelmRelease, local defaults and shared attachment limits.
@@ -106,20 +136,20 @@ does not prove it has consumed newly created values; verify that reconciliation.
 
 The service uses native HTTPS on Pod port 5001 through ClusterIP port 443. Its
 rotating `docling-tls` certificate uses the exact internal approval profile in
-namespace `docling`. Ingress admits only extProc and the cleanup job. Inference
-egress uses explicitly configured RFC1918 IPv4 CIDRs and the matching HTTPS port;
+namespace `docling`. Ingress admits only extProc and the cleanup job. Remote
+inference egress uses explicitly configured RFC1918 IPv4 CIDRs and the matching HTTPS port;
 DNS names alone are not a network allowlist. The optional inference CA ConfigMap
 contains `ca.crt` and sets `REQUESTS_CA_BUNDLE`, replacing Requests' root bundle.
 
 `docling.apiKeySecretRef` supplies the private service's `X-Api-Key` credential.
-`docling.inference.tokenSecretRef` supplies a separate upstream Bearer credential.
-The optional secret-sync package delivers `docling-api:api-key` and
+In remote mode, `docling.inference.tokenSecretRef` supplies a separate upstream
+Bearer credential. The remote secret-sync package delivers `docling-api:api-key` and
 `docling-inference:token` in the Docling namespace. extProc receives only a copy of
 the service API key in `monitor-agentgateway-extproc-docling-secret:api-key`.
 Its OpenBao role cannot read the Docling namespace's upstream token.
 
-The operator uses `openbao-stack-setup` `0.2.15` from Tooling revision
-`79a3c2eb98ea1e407376a95f83d2441576d719f6`. Its canonical selector is
+The CPU-aware operator CLI is `openbao-stack-setup` `0.2.16` from Tooling revision
+`269b8c09190df8bd7b775ff7ef202964d3fe2703`. Its canonical selector is
 `docling.enabled: true` in `docling/docling-product-values`, with the exact Secret
 references above. This permits credential-only staging: compose the namespace,
 values and secret-sync resources, but leave the application package unselected.
@@ -130,7 +160,7 @@ See [Docling credential setup](../operations/openbao.md#optional-docling-credent
 for the reconciliation and hidden-prompt commands. No manual Secret manifests
 belong in client repositories, and credential staging does not enable extraction.
 
-A small mounted startup script injects the upstream token into the custom
+A small mounted startup script injects the remote-mode upstream token into the custom
 `default` preset before importing Docling. Upstream has no native config-file
 environment substitution. The script disables Python logging through CRITICAL,
 including error-response bodies, and runs Uvicorn with no access log. Only fixed
@@ -166,8 +196,8 @@ native authenticated cleanup API and verified TLS. It never deletes LibreChat
 files or cancels active jobs. Certificate and credential changes require the
 configured Reloader watch; failed cleanup must remain visible as Job failure.
 
-PDFs use the remote VLM conversion pipeline. Formats such as DOCX, XLSX, PPTX,
-plain text, Markdown and CSV use their format-specific parsing paths; they are
+PDFs use either the selected remote VLM or standard CPU pipeline. Formats such as
+DOCX, XLSX, PPTX, plain text, Markdown and CSV use their format-specific parsing paths; they are
 not automatically sent as whole files to the vision endpoint. This is not a
 generic URL override for every traditional OCR backend.
 
@@ -278,7 +308,7 @@ With PII disabled, extracted text may contain personal information and must not 
 described as PII-sanitized. With PII enabled, preserve the existing policy's
 allow/transform/reroute/block behavior, rather than inventing mandatory redaction.
 
-The GPU extraction model necessarily receives unredacted page images before PII
+In remote mode, the extraction model receives unredacted page images before PII
 analysis. It is part of the trusted internal processing boundary. "Blocked jobs
 never reach models" means no downstream chat-model or embedding dispatch after a
 block; it cannot mean no prior internal extraction-model inference. No RAG or

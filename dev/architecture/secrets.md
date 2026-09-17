@@ -69,8 +69,9 @@ Each namespace that reads OpenBao has:
 There is no `ClusterSecretStore`. Trust Manager copies the OpenBao CA into only
 the namespaces labeled `secrets.neurwerk.com/openbao-trust: "true"`.
 
-`ExternalSecret` resources refresh hourly, own their target Secret, and retain
-the target when the `ExternalSecret` is deleted.
+`ExternalSecret` resources refresh hourly and own their target Secret.
+`deletionPolicy: Retain` preserves the target when its provider record disappears;
+deleting the owning `ExternalSecret` can still garbage-collect the target Secret.
 
 Existing installations receive approved roles, policies, records, and consumers
 through the versioned `stack-setup reconcile` catalog. Reconciliation requires
@@ -173,22 +174,26 @@ and readiness gates; no runtime selection follows from source availability.
 
 ## Optional Docling
 
-The selected `stack-setup` `0.2.15` catalog generates a missing service API key at
+The selected `stack-setup` `0.2.16` catalog generates a missing service API key at
 `docling/internal:apiKey` and copies it exactly to
 `monitor-agentgateway-extproc/internal:doclingApiKey`. Conflicting copies and
 invalid existing keys stop reconciliation without rotating them.
-The operator separately supplies `docling/external:inferenceToken` through the
-hidden `docling-inference` provider prompt, which preserves sibling fields.
+In remote mode, the operator separately supplies `docling/external:inferenceToken`
+through the hidden `docling-inference` provider prompt, which preserves sibling
+fields. CPU mode needs no inference token and rejects that provider command;
+existing OpenBao credentials are retained when changing modes.
 
 The optional Base secret-sync package delivers only the approved fields:
 
 - `docling/docling-api`, key `api-key`;
-- `docling/docling-inference`, key `token`;
+- `docling/docling-inference`, key `token` (remote package only);
 - `monitor-agentgateway-extproc/monitor-agentgateway-extproc-docling-secret`, key `api-key`.
 
 Each namespace has its own read-only OpenBao role and store. extProc cannot read
 the upstream inference token. Routine secret-operator updates permit the exact
 Docling external record, not either internal API-key record.
+CPU clients select `releases/docling/secret-sync/internal`; the existing root
+package still renders the same resources for remote clients.
 See [Docling setup](../operations/openbao.md#optional-docling-credentials) for
 selection, custody and credential-only staging without application startup.
 
