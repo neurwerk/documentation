@@ -91,6 +91,34 @@ in chart `1.0.5`. Together these images accept 20,000-character tool description
 Base merge, platform publication, client adoption, and deployment remain separate
 actions; none is established by this pin update.
 
+### Document Extraction Images
+
+- PII [PR #15](https://github.com/neurwerk/k8s_stack_pii_engine/pull/15) merged at
+  `a2a6dea4a8d81eb9083e8439689fa6ba8a95a03f` and published `v0.9.0`;
+  [workflow 35275538359](https://github.com/neurwerk/k8s_stack_pii_engine/actions/runs/35275538359)
+  passed both CPU/CUDA jobs and the GitHub Release job.
+- extProc [PR #29](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/29)
+  merged at `fc87d020637fd20f740a4ae75b268cef8ad80a38` and published `v0.8.0`;
+  [workflow 35278793398](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/actions/runs/35278793398)
+  passed all jobs, including the GitHub Release.
+
+Registry tag digests, `linux/amd64` platform and source-revision labels were also
+independently verified for all three images under `ghcr.io/neurwerk/`:
+
+| Image | Verified Digest |
+| --- | --- |
+| `k8s-stack-pii-engine:0.9.0-cpu` | `sha256:1f0025caf4d39ddfd4b12d0d70c9718ae14a42400c2342f1d553831472bc3779` |
+| `k8s-stack-pii-engine:0.9.0-cu124` | `sha256:09577898fad3de6380cc4b497470d97024a120a8e5f02a61e928dd4df588a261` |
+| `k8s-stack-agentgateway-extproc:0.8.0` | `sha256:908d088a10014f0f868f2d04a9bbf3521f1659966af7c2583c4746fa660d74f5` |
+
+[Base PR #185](https://github.com/neurwerk/k8s_stack_base/pull/185) merged wiring
+and the PII CPU/extProc pins above at `5c9e0c8c3e9a39cca8b9405c716d43bf805f80f4`.
+Those service versions were observed live and Ready through the Base alpha source,
+not a stable publication. CPU Docling is deployed and synthetic TXT/PDF conversion
+followed by PII analysis passed. The final client upload switch remains off while
+storage health blocks dependent releases; end-to-end chat dispatch is not yet
+verified. See [document extraction](../architecture/docling.md).
+
 ### Auxiliary Tooling Image
 
 The Tooling image is an auxiliary image in its consuming charts. Bump each

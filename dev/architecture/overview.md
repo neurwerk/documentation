@@ -99,7 +99,7 @@ namespace-local Kubernetes Secrets used at runtime.
 - [Forgejo (staged optional integration)](forgejo.md)
 - [Rook/Ceph storage](rook-ceph.md)
 - [LibreChat](librechat.md)
-- [Docling attachments (planned)](docling.md)
+- [Docling attachments](docling.md)
 - [Observability](observability.md)
 - [Studio](studio.md)
 - [PII policy engine](pii-policy-engine.md)

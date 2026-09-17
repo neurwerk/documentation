@@ -87,6 +87,13 @@ package must be composed after the namespace exists and reconciled before
 enablement; annotations alone do not make the existing controller watch a new
 namespace. See [Docling service wiring](docling.md#disabled-service-package).
 
+Before starting Docling, the client values stage must wait for
+`cert-manager-internal-docling-server` to be Ready at its current generation.
+An old Ready HelmRelease does not prove a newly enabled policy has been applied.
+If the first request was denied during that race, verify the policy first and use
+`cmctl renew docling --namespace docling --context <context>` to request normal
+controller-managed issuance; never manually approve around a denied policy.
+
 ### OpenBao CA Bundle
 
 trust-manager copies `tls.crt` from the internal CA Secret into ConfigMap

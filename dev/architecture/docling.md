@@ -1,27 +1,26 @@
-# Docling Attachments (Planned)
+# Docling Attachments
 
-Status: attachment-mode controls, the disabled CPU service and optional credential
-delivery are merged. End-to-end extraction is not implemented
-or deployed. The upstream service uses Docling `2.127.0`; the operator's external
-model/runtime and client endpoint settings remain separate.
+Status: [Base PR #185](https://github.com/neurwerk/k8s_stack_base/pull/185) merged
+wiring and image pins at `5c9e0c8c3e9a39cca8b9405c716d43bf805f80f4`.
+PII Engine `0.9.0` and extProc `0.8.0` have been observed live and Ready through
+the Base alpha source. The CPU Docling backend is deployed, and synthetic TXT and
+PDF conversions followed by PII analysis passed with fresh request-local aliases.
+Final model/upload activation remains disabled while an environment storage-health
+check blocks dependent releases; end-to-end chat dispatch is not yet verified.
 
 ## Implementation Tracking
 
 [Base #170](https://github.com/neurwerk/k8s_stack_base/issues/170) tracks the
-cross-repository work. The first implementation is
-[extProc PR #28](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/28):
-typed Chat/Responses attachments, including history, follow a per-model mode
-independently of PII. Missing modes default to `block`; explicit `passthrough`
-requires PII disabled. `extract` fails closed with HTTP 503 for file parts until
-conversion is implemented; other attachment types return 403 in that mode.
-This preserves ordinary text-only bypass, arbitrary tool JSON and MCP behavior.
-PR #28 and the chart producer in Base PR #174 were merged on 2026-09-16. They did
-not publish an image or deploy the feature; Base still pins extProc `0.7.1`.
+cross-repository work. [extProc PR #29](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/29)
+and [PII PR #15](https://github.com/neurwerk/k8s_stack_pii_engine/pull/15) are merged
+and published as extProc `0.8.0` and PII Engine `0.9.0` (CPU and CUDA).
+See [publication verification](../operations/image-releases.md#document-extraction-images)
+for exact sources, digests and successful release workflows.
 
-The remaining bounded tasks are:
-
-- [Gateway conversion #27](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/issues/27).
-- [Document PII contract #14](https://github.com/neurwerk/k8s_stack_pii_engine/issues/14).
+[Base #184](https://github.com/neurwerk/k8s_stack_base/issues/184) tracks the merged
+integration above; alpha service readiness does not establish stable publication.
+The remaining client adoption targets end-to-end CPU extraction; remote vision
+inference has not been tested end to end.
 
 The CPU service in [Base PR #175](https://github.com/neurwerk/k8s_stack_base/pull/175)
 is merged, closing [#171](https://github.com/neurwerk/k8s_stack_base/issues/171).
@@ -30,8 +29,9 @@ with the operator CLI in [Tooling PR #42](https://github.com/neurwerk/k8s_stack_
 Explicit standard CPU selection is merged in [Base PR #179](https://github.com/neurwerk/k8s_stack_base/pull/179),
 with the CPU-aware CLI in [Tooling PR #44](https://github.com/neurwerk/k8s_stack_tooling/pull/44).
 
-The mode producer is merged in [Base PR #174](https://github.com/neurwerk/k8s_stack_base/pull/174),
-closing [#173](https://github.com/neurwerk/k8s_stack_base/issues/173).
+The initial mode consumer [extProc PR #28](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/28)
+and chart producer [Base PR #174](https://github.com/neurwerk/k8s_stack_base/pull/174)
+were merged on 2026-09-16; they did not enable extraction by themselves.
 
 ## Deployment Boundary
 
@@ -81,9 +81,9 @@ whose lockfile selects `docling-slim 2.127.0`, `docling-core 2.96.1` and
 It includes amd64 and arm64; the amd64 manifest is
 `sha256:e034edf2914d56503b6c968891e8c8cffb0b749708c42740052b8aab383e1bfa`,
 and its revision label matches source `27fa2aa9638e449d7fcd4364ffcde8d9a47bc4eb`.
-Registry metadata and the pinned upstream build/runtime source were inspected;
-no live extraction was run. Use the local task engine with no UI or persistent
-queue. Remote mode keeps the fixed administrator-owned VLM preset.
+The earlier worker verification inspected registry metadata and pinned upstream
+build/runtime source, without live extraction. Use the local task engine with no
+UI or persistent queue. Remote mode keeps the fixed administrator-owned VLM preset.
 
 ### CPU Selection
 
@@ -109,13 +109,45 @@ Only trusted gateway code may choose conversion options.
 
 CPU results can differ from vision-model results and large documents may take
 longer. Existing CPU, memory and time limits remain client-configurable. Selecting
-CPU does not enable uploads or finish the pending gateway integration.
+CPU alone does not enable uploads or complete client activation.
 
-The gateway constructs conversion options rather than forwarding caller options:
-one uploaded file, in-body JSON output, no URL sources or callbacks. Upstream
-returns the document under `document.json_content` in a status/error envelope.
-Its synchronous wait timeout does not cancel the underlying job; worker deadlines,
-bounded admission and cleanup must account for that, without blind retries.
+## Document Conversion
+
+`extract` accepts PDF, DOCX, XLSX, PPTX, UTF-8 text, Markdown and CSV, including
+attachments in history. Chat Completions uses `type: file` with `file.filename`
+and `file.file_data`; Responses uses `type: input_file` with `filename` and
+`file_data`. Data must be an exact MIME/extension-matched
+`data:<mime>;base64,<bytes>` URI with strict base64, not a URL, file ID, raw base64
+or extra reference. All files pass preflight checks before any submission.
+Standalone images, audio and video are unsupported and return HTTP 403.
+
+The verified-HTTPS client submits one multipart file at a time using native
+`POST /v1/convert/file/async`, polls `GET /v1/status/poll/{task_id}`, then fetches
+`GET /v1/result/{task_id}`. This is internal job handling, not a new UI or durable
+queue. Submissions are never retried. Only the service API key is sent, never
+caller credentials, options, URL sources or callbacks. Output is in-body JSON;
+image exports and enrichments are off. Plain text uses the Markdown backend.
+
+Only successful, error-free, nonempty `document.json_content` results with
+`DoclingDocument` schema `1.10.0` are accepted. A strict reference walk collects
+body/furniture text, table rows and picture captions. Broken references, cycles,
+orphaned content, unsupported structures and incomplete PDF page sets reject the
+whole request. Checkbox labels keep `[x]` or `[ ]`; formulas without nonempty
+canonical text are rejected, never recovered from `orig`.
+
+Each document becomes one complete text part (`text` for Chat, `input_text` for
+Responses). Only its display filename survives as source metadata; Docling receives
+a constant `upload.ext` name. Images, embedded objects, `orig`, source URLs and
+other metadata are not forwarded. There is no truncation, partial-result dispatch,
+raw fallback, line/cell reconstruction, RAG or embedding path.
+
+Each extProc process admits one active batch with no waiting queue. Cancellation
+or the batch deadline stops later files but holds admission until the in-flight
+native job or preflight work finishes. If submission/status replies are lost,
+conversion stays locked in that process: an operator must check native jobs before
+restarting it. This does not fail health/readiness or trigger automatic restarts.
+extProc shutdown drains for at most five seconds; crashes, restarts and overlapping
+rollouts can leave native jobs running. This is not a global or persistent limit.
 
 ## Disabled Service Package
 
@@ -175,12 +207,13 @@ no GPU resources, read-only root and bounded disposable `/scratch` and `/tmp`
 volumes. Its probes check the local lifecycle, not remote model availability.
 Uvicorn has no server-wide concurrency cap: that cap also rejects health probes
 when conversions occupy the listener. Conversion admission belongs in the gateway,
-before calling Docling, and must be implemented before this disabled service is
-enabled. One native worker does not bound waiting requests or the task queue.
+before calling Docling, and is implemented in extProc `0.8.0`. Adopt the compatible
+consumer before enabling this disabled service. One native worker alone does not
+bound waiting requests or the task queue.
 Defaults request a 300-second document budget, 90-second model calls and a
-360-second synchronous wait. Retries and page-batch checks can exceed those
-budgets; they are not hard job-cancellation guarantees. Future extProc must enforce
-bounded admission, upload/expanded-file/output limits and no blind retries.
+360-second wait setting, also used for extProc's whole batch deadline. Native
+retries and page-batch checks can exceed worker budgets; these are not hard
+job-cancellation guarantees. extProc uses async polling, not synchronous conversion.
 
 On normal shutdown, Uvicorn stops accepting connections and drains in-flight HTTP
 requests for up to `syncWaitSeconds`. Pod termination grace is derived from that
@@ -203,35 +236,10 @@ generic URL override for every traditional OCR backend.
 
 ## Why Chat Completions
 
-`POST /v1/chat/completions` is a request/response protocol, not a text-only model
-or a specific server. Its multimodal message format can carry text and images.
-Docling's API engine uses this protocol for document reading, rather than for a
-conversation with the end user.
-
-An illustrative request body, with image bytes omitted, is:
-
-```json
-{
-  "model": "ibm-granite/granite-docling-258M",
-  "messages": [
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "image_url",
-          "image_url": {"url": "data:image/png;base64,<page-bytes>"}
-        },
-        {"type": "text", "text": "Convert this page to docling."}
-      ]
-    }
-  ]
-}
-```
-
-The GPU server returns generated content in the Chat Completions response. A
-matching Docling preset defines the extraction instruction and expected format,
-for example DocTags for Granite-Docling. Docling parses that content and builds
-the `DoclingDocument`; the GPU server need not return that JSON schema directly.
+In remote mode, Docling uses `POST /v1/chat/completions` to send rendered page
+images and an extraction instruction to the vision server. This protocol supports
+images as well as text. The preset defines the expected response, such as DocTags
+for Granite-Docling; Docling turns it into `DoclingDocument` JSON.
 
 Using the same URL path does not mean using the same hostname, credentials or
 model as normal chat. Docling calls the private GPU endpoint directly, not the
@@ -278,6 +286,15 @@ file/image URLs on the passthrough path. Downstream handling remains the backend
 responsibility. A failed or incomplete extraction, or required PII failure/block,
 stops the entire request without forwarding the original as a fallback.
 
+For PII-enabled extraction, extProc sends the whole canonical converted Chat or
+Responses request once to `POST /v1/adapter/analyze-document-request` over the
+existing adapter mTLS connection. PII Engine uses a fresh request scope, with no
+session-cache reuse or persistence; the existing request and reply contracts and
+policy allow/transform/reroute/block behavior remain. Mutation and reversal checks
+use the converted request. There is no separate PII call per line or table cell,
+and PII split across those boundaries may be missed. Ordinary text-only bypass,
+tool JSON and MCP behavior are unchanged.
+
 ### Configuration And Compatibility
 
 The chart setting is `guardrails.llmPolicyEngine.models[].attachmentMode`, keyed
@@ -291,7 +308,9 @@ a mode, preserving default renders for shipped extProc. **Deploy the new extProc
 consumer before configuring any explicit mode, including `block`.** Older strict
 consumers reject the new metadata field rather than ignore it. Omitted modes default
 to block in the new consumer; this does not retroactively change older runtimes.
-Neither PR publishes or pins a new extProc image.
+Extraction needs both service versions, the merged Base wiring and client activation.
+Phase gateway model settings and the LibreChat upload flag only after compatible
+consumers and the private Docling service are ready.
 
 Selected catalog rows may carry an explicit mode, but keep their PII-enabled
 default. Clients should use the existing direct-model values/whole-list override
@@ -299,14 +318,10 @@ mechanism rather than manually edit generated catalogs. A same-name direct model
 replacement can explicitly disable PII and opt into passthrough; it does not
 inherit a catalog attachment mode. These settings never grant model permissions.
 
-The initial extraction allowlist is PDF, DOCX, XLSX, PPTX, plain text, Markdown
-and CSV. In `extract` mode, standalone images/audio/video remain unsupported; a
-scanned PDF may produce internal page images. The extraction path strips image
-payloads, embedded objects,
-source-file URLs and hidden raw copies before preparing the chat-model request.
-With PII disabled, extracted text may contain personal information and must not be
-described as PII-sanitized. With PII enabled, preserve the existing policy's
-allow/transform/reroute/block behavior, rather than inventing mandatory redaction.
+With PII disabled, the model receives the converted body without PII state or guard
+injection. Extracted text may contain personal information and is not PII-sanitized.
+`contentTracingEnabled` remains a separate, unchanged model setting: when enabled,
+model traces may retain prompts and completions, including extracted text.
 
 In remote mode, the extraction model receives unredacted page images before PII
 analysis. It is part of the trusted internal processing boundary. "Blocked jobs
@@ -314,30 +329,51 @@ never reach models" means no downstream chat-model or embedding dispatch after a
 block; it cannot mean no prior internal extraction-model inference. No RAG or
 embedding service is part of this feature.
 
-Keep page images, extraction output, prompts and filenames out of logs and traces
-on both service hops, including error paths. The researched Docling API helper
-can log response bodies on errors and a request payload at debug level. Normal
-log levels alone are insufficient; suppress/filter content-bearing library logs.
-Its non-streaming error path can return empty output instead of raising, so a
-completed HTTP call alone must not be treated as successful extraction.
+The extraction and document-PII hops keep raw content and filenames out of logs
+and traces, including errors. Keep Docling's content-bearing library logs suppressed
+and backend resource fetching disabled. PDF resource isolation is not a full
+security sandbox, and schema checks cannot prove OCR completeness or PII detection
+quality; worker resources and network restrictions remain necessary.
 
-## Client Defaults And UX
+## Bounds And Deadlines
 
 `releases/shared/document-attachments.yaml` defines `documentAttachments.fileBytes`
 (20 MiB), `totalBytes` (40 MiB), `count` (5) and `pages` (200). Client-wide overrides
-belong in canonical client values projected into the consuming namespaces. Native
-Docling handles one file per conversion and applies per-file/page bounds; aggregate
-request admission and expanded/output limits remain future extProc work. These
-values do not expand the current gateway transport limits or enable extraction.
+belong in canonical client values projected into the consuming namespaces. Count,
+total bytes, pages and the conversion deadline apply to the whole batch, including
+history. Raising upload limits does not raise converted-output limits.
+
+| Boundary | Limit or check |
+| --- | --- |
+| Uploads | 20 MiB per file; 40 MiB, 5 files and 200 pages per batch by default |
+| Filename | At most 256 characters, no controls; retain only the display basename |
+| PDF inspection | Valid, unencrypted PDF; isolated helper with 256 MiB address space, 5-second CPU and 10-second parent deadline; kill/reap on timeout, no temporary files or parser output |
+| Office ZIP | 100 MiB expanded total, 25 MiB per entry, 10,000 entries; safe paths, no encryption, required OOXML parts; never unpack to disk |
+| XLSX / CSV | 100,000 positions, including sparse cells and ranges; XLSX streaming XML rejects DTDs and caps depth at 32 and elements at 200,000; CSV delimiter/quote counts and row/column product are bounded |
+| Docling output | 16 MiB JSON response; schema `1.10.0`, 20,000 graph nodes, depth 32 and 100,000 table positions/reference visits |
+| JSON parsing | Incoming request, Docling result and PII reply: depth 64, 200,000 lexical tokens before tree allocation; reject duplicate keys and non-finite numbers |
+| Converted request | 5 MiB serialized and 4,000,000 text characters across the whole request, even with PII off; no truncation |
+| Upload transport (Docling enabled) | Gateway `maxBufferSize: 67108864` as integer bytes, **not** `64Mi`; extProc request 64 MiB and gRPC envelope 68,222,976 bytes |
+| extProc resources (Docling enabled) | Two fixed Pods, no HPA; one batch per process, four concurrent gRPC RPCs per Pod; memory request 1 GiB, limit 2 GiB |
+
+Each Docling HTTP call has a fixed 30-second deadline; status replies are capped
+at 64 KiB. extProc enforces the whole conversion-batch deadline (360 seconds by
+default) and the whole PII call, including response reading (615 seconds in the
+platform). Foreground waits are therefore bounded by 360 + 615 = 975 seconds.
+AgentGateway 1.5's backend `requestTimeout` (1005 seconds by default with Docling enabled)
+covers only initial gRPC response headers, **not** end-to-end processing. Native
+jobs can outlive these waits; admission stays held as described above.
+
+## Client Defaults And UX
 
 Client product values supply `docling.inference.url`, `model`, `cidrs`, `port`,
 optional `caConfigMap`, Secret references and service resources/time budgets.
 Keep the full `/v1/chat/completions` URL separate from the internal Docling Service.
 
-LibreChat should send raw documents where its existing provider-delivery settings
-allow it. Local text extraction is acceptable. Keep its stored originals and GUI
-deletion behavior. Delete only this feature's temporary gateway/Docling data;
-account for transient data on the inference server as well.
+LibreChat sends raw documents where its existing provider-delivery settings allow
+it; the file-provider fallback works without a legacy flag. Keep its stored
+originals and GUI deletion behavior. Cleanup covers only temporary gateway/Docling
+data; account for transient data on the inference server as well.
 
 `frontendLibrechat.documentAttachments.enabled` defaults to false. When selected,
 the shared chart emits native `fileConfig.endpoints.AgentGateway` provider-delivery
@@ -345,12 +381,15 @@ settings and the document MIME allowlist, converting shared byte caps to numeric
 MiB. It does not select model attachment modes or activate Docling, and does not
 change the app image, stored originals, GUI deletion or normal waiting behavior.
 
-Use LibreChat's normal waiting behavior. Do not add a custom upload API, progress
-display, durable document store or LibreChat fork upfront. Keep new tests focused
-on configuration and blocked/Docling/PII dispatch, including failure without raw
-fallback. Run existing repository checks; no separate acceptance-test campaign
-or GPU test environment is required. Reduced tests do not establish OCR quality
-or comprehensive PII leak resistance.
+The pinned upstream LibreChat skips DOCX, XLSX and PPTX for `claude`-named models
+before the request reaches the gateway. Use PDF or text for those models. Do not
+add a fork or a `nativeText` override: upstream local extraction does not support
+PPTX and can truncate text, so it cannot guarantee complete document delivery.
+
+Use LibreChat's normal waiting behavior, with no custom upload API, progress UI or
+durable document store. Run existing repository checks; no separate acceptance-test
+campaign or GPU test environment is required. These checks do not establish OCR
+quality, remote-vision behavior or comprehensive PII leak resistance.
 
 ## Sources And Related Docs
 

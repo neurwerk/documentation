@@ -116,6 +116,13 @@ Stable reversible aliases are limited to adapter Chat requests. Their namespace
 depends on the trusted session key, active policy version, and runtime hash key.
 Direct Studio evaluation and other request types use request-local namespaces.
 
+`POST /v1/adapter/analyze-document-request` in Engine `0.9.0` also uses fresh
+request-local aliases. It accepts the whole Chat/Responses request with each
+extracted document and retained filename already in a text part, not raw Docling
+JSON. It always evaluates the current request without reading or writing sticky
+session decisions, and ignores `x-pii-session-key`. Limits, policy and mTLS remain
+shared with ordinary analysis. See [Docling](docling.md) for the conversion boundary.
+
 Reversal mappings remain in one extProc request and are discarded after response
 processing. extProc restores only exact, authorized placeholders in supported
 response fields. Invalid placeholders fail closed in structured and protocol
@@ -169,6 +176,7 @@ certificate identity.
 | --- | --- | --- |
 | `GET /v1/adapter/ready` | extProc | Verify the complete analysis path. |
 | `POST /v1/adapter/analyze-request` | extProc | Analyze traffic and return adapter-only report and reversal data. |
+| `POST /v1/adapter/analyze-document-request` | extProc | Analyze the converted whole chat with request-local aliases and no session cache. |
 | `POST /v1/studio/analyze-request` | Studio API | Analyze without returning reversal data. |
 | `POST /v1/studio/evaluate-policy` | Studio API | Evaluate a request-local policy candidate. |
 | `GET /v1/actions` | Studio API | Read the action registry. |
