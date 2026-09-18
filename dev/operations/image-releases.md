@@ -119,6 +119,23 @@ followed by PII analysis passed. The final client upload switch remains off whil
 storage health blocks dependent releases; end-to-end chat dispatch is not yet
 verified. See [document extraction](../architecture/docling.md).
 
+### Private Image Runtime
+
+ExtProc [v0.9.0](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/releases/tag/v0.9.0)
+is published from reviewed source `4e7bc05719b4fbdb4b3220ed98854e0128ab0302`.
+[Workflow 35347879238](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/actions/runs/35347879238)
+passed quality, image publication and the GitHub Release job. Independent registry
+verification confirmed `linux/amd64`, matching OCI revision/version labels and
+digest `sha256:f9b98191a6cc96bf52651bdf1cdecb9eb81e36d6555a6fd2479c6456009cd960`.
+
+[Base #200](https://github.com/neurwerk/k8s_stack_base/pull/200) adopts the exact
+image in chart `1.3.1` and pins workstation CLI `openbao-stack-setup` `0.2.17`
+from `8f62f6e1b0ccf6b4d60f7cc66bc9a19f6fdc234b`. The CLI is not bundled in the
+Tooling container, so its thirteen existing `0.7.0` image pins stay unchanged.
+No v2 activation, client permissions or stable platform tags changed. See
+[private image release evidence](../architecture/image-attachments.md#release-evidence)
+for the boundary between source availability, deployment and activation.
+
 ### Auxiliary Tooling Image
 
 The Tooling image is an auxiliary image in its consuming charts. Bump each

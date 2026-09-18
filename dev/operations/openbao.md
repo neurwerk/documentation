@@ -272,6 +272,16 @@ provisioning or reconciliation has been performed as part of this implementation
 
 ## Optional Docling Credentials
 
+For Base `main` after [#200](https://github.com/neurwerk/k8s_stack_base/pull/200),
+use `openbao-stack-setup` `0.2.17` from Tooling source
+`8f62f6e1b0ccf6b4d60f7cc66bc9a19f6fdc234b`. It accepts `internal-standard` and
+`private-vlm`, with `cpu` and `remote` retained as aliases. The global and three
+Docling prerequisites select this same source. This is a workstation CLI update,
+not a Tooling container change or a new catalog schema, credential rotation or
+bootstrap operation. Published stable contracts retain their exact earlier pins.
+
+### Earlier Contracts
+
 [Tooling PR #44](https://github.com/neurwerk/k8s_stack_tooling/pull/44) adds CPU selection
 in `openbao-stack-setup` `0.2.16` at revision
 `269b8c09190df8bd7b775ff7ef202964d3fe2703`, still at catalog schema `4`.

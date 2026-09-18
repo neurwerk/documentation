@@ -7,13 +7,39 @@ Status: source merged on 2026-09-18 in
 (`3a4a0a6`), tracked by [Base #193](https://github.com/neurwerk/k8s_stack_base/issues/193).
 Required CI passed for all three; local Base checks pass on the committed tree.
 
-The chart changes are available in Base `main`, the alpha source, not stable
-`v0.3.8`. Published extProc `0.8.0` and Tooling `0.7.0` predate these changes and
-their Base pins are unchanged. Image processing therefore still needs separately
-published/verified runtimes, pin adoption and explicit v2 activation. Existing
-client values and permissions are unchanged. No cluster reconciliation or live
-reader verification was performed for this merge. The existing
-[document pipeline](docling.md) remains the version-one runtime contract.
+The runtime and chart references are now available in Base `main`, the alpha
+source, not stable `v0.3.8`. ExtProc `0.9.0` is published and pinned; the separate
+workstation CLI is `0.2.17`. Image processing still needs a configured, qualified
+private reader and explicit v2 activation after compatible consumers are running.
+Existing client values and permissions are unchanged. No cluster reconciliation
+or live reader verification was performed for these changes. The existing
+[document pipeline](docling.md) remains the default version-one runtime contract.
+
+## Release Evidence
+
+[extProc #33](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/33)
+prepared `v0.9.0` at `4e7bc05719b4fbdb4b3220ed98854e0128ab0302`.
+The [publication workflow](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/actions/runs/35347879238)
+passed quality, image publication and GitHub Release jobs. Independent registry
+inspection matched the [release](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/releases/tag/v0.9.0):
+
+- image: `ghcr.io/neurwerk/k8s-stack-agentgateway-extproc:0.9.0`;
+- digest: `sha256:f9b98191a6cc96bf52651bdf1cdecb9eb81e36d6555a6fd2479c6456009cd960`;
+- platform: `linux/amd64`;
+- OCI revision/version: the source above and `0.9.0`.
+
+[Tooling #51](https://github.com/neurwerk/k8s_stack_tooling/pull/51) versions
+`openbao-stack-setup` as `0.2.17` at
+`8f62f6e1b0ccf6b4d60f7cc66bc9a19f6fdc234b`. This workstation CLI is not part of
+the Tooling container, so no replacement Tooling image was published.
+
+[Base #200](https://github.com/neurwerk/k8s_stack_base/pull/200), merged at
+`bb85bed12bc82d1b3f12cdde7f226c7f798686f7`, adopts that image in extProc chart
+`1.3.1` and the exact CLI source in the global and three Docling prerequisites.
+All thirteen Tooling image pins remain at `0.7.0`. Full Base checks, release
+checks, pre-commit and Required CI passed. Metadata remains v1; no client upload
+or image-forwarding permission was enabled. A new signed platform release is
+still required for stable availability; existing stable tags are unchanged.
 
 ## Responsibilities
 
@@ -45,8 +71,8 @@ docling:
 `internal-standard` uses document parsing and RapidOCR inside the Docling worker.
 `private-vlm` calls a separately hosted, trusted vision-language model. The old
 `cpu` and `remote` names remain transition aliases. Existing shipped defaults
-remain unchanged, and Base translates preferred names to those old values in the
-extProc environment so the staged chart alone does not break published consumers.
+remain unchanged, and Base retains those old environment values for rolling
+compatibility; extProc `0.9.0` accepts both name pairs.
 Tooling accepts both name pairs and preserves the existing managed Secret contract.
 
 PDFs use the selected pipeline. Office and text formats use their format-specific
@@ -206,8 +232,8 @@ are omitted from `image_forwarding`. Locality is derived from the same concrete
 routing configuration, never caller headers, model names or text classification.
 Remote-capable/virtual destinations cannot receive unchecked processed images.
 
-1. Publish and verify compatible extProc and Tooling releases with separate approval.
-2. Adopt their verified pins and deploy compatible consumers while keeping metadata v1 and existing permissions.
+1. Publish and verify the compatible extProc image and version the separate workstation CLI; both are complete for the sources above, without a Tooling container rebuild.
+2. Adopt the image digest and CLI source prerequisite (complete in Base #200), then verify compatible deployed consumers while keeping metadata v1 and existing permissions.
 3. Deploy the compatible private Docling configuration, including `images`, and verify actual reader/backend capabilities under separately authorized access.
 4. Explicitly select metadata v2 and migrate `extract` to `process` with `imageForwarding: none`; migrate `cpu`/`remote` to their preferred names only after Tooling support is available.
 5. Enable image forwarding only for reviewed model entries. Configure application upload support separately; this implementation does not enable client uploads.

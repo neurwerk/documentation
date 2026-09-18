@@ -8,10 +8,11 @@ PDF conversions followed by PII analysis passed with fresh request-local aliases
 Final model/upload activation remains disabled while an environment storage-health
 check blocks dependent releases; end-to-end chat dispatch is not yet verified.
 
-The staged [private image extension](image-attachments.md) adds preferred reader
-names, version-two attachment policies and local face detection. It is not part
-of published extProc `0.8.0` and does not enable existing clients automatically.
-The document behavior below remains the published version-one baseline.
+The opt-in [private image extension](image-attachments.md) adds preferred reader
+names, version-two attachment policies and local face detection. ExtProc `0.9.0`
+is published and pinned by [Base #200](https://github.com/neurwerk/k8s_stack_base/pull/200),
+but no client is enabled automatically and its live deployment is not verified
+here. The document behavior below remains the published version-one baseline.
 
 ## Implementation Tracking
 
