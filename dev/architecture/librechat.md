@@ -76,6 +76,40 @@ connection attempts. Clients may change these limits through
 `frontendLibrechat.documentdb.maxPoolSize` and `maxConnecting` after reviewing
 the shared PostgreSQL capacity.
 
+## Optional Memory
+
+The shared chart exposes `frontendLibrechat.memory` in client LibreChat values.
+It is disabled by default and renders `memory.disabled: true`; this also disables
+upstream memory permissions without deleting saved entries. Clients independently
+select `enabled`, `agent.enabled`, `agent.model`, `agent.instructions`, `tokenLimit`
+(default 2000), `maxInputTokens` (4000), and `messageWindowSize` (5).
+
+Enabled memory always uses `personalize: true` and `interface.memories: true` so
+upstream USER/ADMIN permissions include viewing, editing, deleting, and the user
+off switch. The existing Agents/Marketplace permission hook remains unchanged.
+Per-user preferences are not rewritten: users default to on in the pinned
+application, but an existing off choice remains off. This version cannot default
+users to off while still allowing individual opt-in through configuration alone.
+
+Automatic updates require `agent.enabled: true` and an explicit model from the
+effective catalog; the chart rejects unavailable models and nonpositive limits.
+The provider is the existing `AgentGateway` endpoint, using the user's OIDC token
+and model permissions. No new credentials, service, image, or database are needed.
+Default instructions remember clearly stated, lasting preferences automatically,
+update corrections, and honor forget requests; clients may replace them. Manual
+memory works without an automatic agent. Inline composer memory tools are unchanged.
+
+Users control **Settings > Data controls > Reference saved memories** and can
+manage entries in the **Memories** panel. Turning memory off stops future use and
+automatic updates, but does not delete saved notes or remove previous chat text.
+Memories persist in the existing LibreChat database, scoped to the user (and
+optionally an Agent partition).
+
+Automatic updates add model calls with recent chat text and saved notes. Existing
+route tracing and PII policies still apply. Local extraction does not keep saved
+notes local when the user later selects a cloud chat model. This configuration
+contract does not establish live model-tool behavior or cluster adoption.
+
 ## Optional Voice Support
 
 Voice configuration support is merged in [Base PR #172](https://github.com/neurwerk/k8s_stack_base/pull/172)
