@@ -72,6 +72,11 @@ configure it.
 Prefer in-process API tests, dependency overrides, mock transports, temporary
 paths, and small fakes over network-dependent tests.
 
+Test real failure risks once, in the repository that owns the behavior. Client
+checks cover their configuration; Base tests shared validators and platform rules.
+Prefer clear outcomes over copied configuration, version snapshots, or coverage
+targets. Keep helpers and test documentation short.
+
 Each project under `tooling/cli_tools/` has its own lockfile and enforces at
 least 80 percent test coverage. Reporting commands consumed by automation must
 remain non-interactive.

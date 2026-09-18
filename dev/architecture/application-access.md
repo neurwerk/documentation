@@ -164,17 +164,17 @@ mise exec -- uv run --offline --frozen python scripts/check_client_application_a
 
 Supported clients integrate this into ordinary `make check` and `Required CI`:
 
-- `config/application-access-checker-revision` pins the checker to one full merged
-  Base commit. The initial integration used `70bf2955dbd5d52b9ce2d74a5e52a557e4610eec`;
-  the alpha integration uses `90d6ce6342375520ee1bd644aa24d8013ee1d96f` for quoted Forgejo values.
-- `.ci/application-access-checker` holds that disposable tooling checkout.
-- `.ci/application-access-platform` independently holds the selected runtime
-  platform, derived from the client's existing source selector.
-- Explicit `APPLICATION_ACCESS_CHECKER_WORKTREE` and
-  `APPLICATION_ACCESS_PLATFORM_WORKTREE` paths support local candidate work.
-  A checker override is reported as a candidate, not as pinned validation.
-- Do not reuse `BASE_WORKTREE`: existing tests reserve it for candidate platform
-  authorization checks. Protected Platform Compatibility workflows are unchanged.
+- `config/validation-revision` pins shared Base validators to a full merged commit;
+  `.ci/validation` holds that checkout.
+- `.ci/application-access-platform` separately holds the runtime selection: an
+  exact stable tag, alpha `main`, or a frozen alpha commit.
+- `VALIDATION_WORKTREE` and `APPLICATION_ACCESS_PLATFORM_WORKTREE` allow explicit
+  local candidates, reported as candidate rather than pinned validation.
+
+Protected compatibility jobs read the validation pin only from the trusted client
+base revision, never the proposed PR. Stable-only is the default; alpha support
+requires explicit `--allow-alpha`. Shared regressions live in Base; clients check
+their own configuration and CI wiring. See each client's README for setup.
 
 Checkout preparation may access GitHub; the adapter never fetches or contacts a
 cluster. It reports checker, platform, and client revisions separately. Consumed
