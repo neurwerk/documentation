@@ -381,9 +381,10 @@ provider named `microsoft-active-directory` with these rules:
 ### Staged Runtime Gate
 
 Server and Active Directory configuration charts `1.1.0` add `groupMappings`
-and `allowInsecureLdap`. Tooling `0.7.0` source implements both, but its image
-publication, verification and pin adoption are still pending. Published pins
-remain unchanged; chart support is not evidence of a released or deployed runtime.
+and `allowInsecureLdap`. Tooling `0.7.0` implements both and its image is
+[published and verified](../operations/image-releases.md#auxiliary-tooling-image).
+Base pin adoption is still pending. Existing chart pins remain unchanged;
+image publication is not evidence of platform adoption or deployment.
 
 Selecting mappings or plaintext LDAP requires both charts to receive
 `k8sTools.image` as `ghcr.io/neurwerk/k8s-stack-tooling:X.Y.Z`, version
@@ -392,7 +393,7 @@ prereleases, digest-only references and other repositories are rejected. This
 render-time gate checks the declared version, not whether the image is published.
 Disabled federation and legacy LDAPS remain renderable with the existing pins.
 Image publication, platform release, client adoption and live verification are
-separate authorized steps; none is established by this source change.
+separate authorized steps; only Tooling image publication is established here.
 
 ### Group Selection
 

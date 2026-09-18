@@ -182,8 +182,9 @@ selected directory port and configured CIDRs.
 The bind principal and credential remain in OpenBao at `auth-keycloak/external`
 and use the same Secret for both transports and group modes. Mappings and
 plaintext require the staged charts `1.1.0` and compatible Tooling `>=0.7.0`
-image contract; `0.7.0` source is not publication or adoption. Do not change pins
-as part of a group-only values edit before the image is published and verified.
+image contract. Tooling `0.7.0` is published and verified; Base pin adoption
+remains separate. Do not change pins as part of a group-only values edit before
+the selected image is published and verified.
 See [Keycloak federation](../authentication/keycloak.md#active-directory-federation)
 for source-name validation, actual child paths and the exact runtime gate.
 

@@ -131,6 +131,23 @@ and a `linux/amd64` image. Maintenance chart `0.1.1` is its new consumer; this
 additive rollout does not update existing initialization-job consumers. See
 [On-Demand Maintenance](maintenance.md) for alpha acceptance and idle state.
 
+Tooling [v0.7.0](https://github.com/neurwerk/k8s_stack_tooling/releases/tag/v0.7.0)
+is published from reviewed commit `7d2f9475db90ecf6d8804a688ef4b7809fa8af26`.
+[Publication workflow 35313889657](https://github.com/neurwerk/k8s_stack_tooling/actions/runs/35313889657)
+passed release validation, all eight package quality jobs, image publication and
+the GitHub Release job. Independent registry verification confirmed:
+
+- image: `ghcr.io/neurwerk/k8s-stack-tooling:0.7.0`;
+- manifest digest: `sha256:f744427df82f4a5b0a94f2f9fbf6c59ab98e1ec4f99963b6d836ea9d765e88bb`;
+- platform: `linux/amd64`;
+- OCI source-revision label: `7d2f9475db90ecf6d8804a688ef4b7809fa8af26`;
+- OCI version label: `0.7.0`.
+
+This publishes the built-in LDAP group-mapping and explicit plaintext-transport
+support. It does not update Base image pins, publish a platform release, activate
+client federation or establish live verification. Pin adoption remains tracked
+in [Base #183](https://github.com/neurwerk/k8s_stack_base/issues/183).
+
 ### Keycloak Theme Image
 
 `keycloak_theme/` (`neurwerk/k8s_stack_keycloak_theme` on GitHub) owns the native

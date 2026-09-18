@@ -40,9 +40,9 @@ When Microsoft Active Directory federation is enabled:
   Directory state.
 - A local Keycloak break-glass administrator remains available for recovery.
 
-Mapping and plaintext support is implemented in Tooling `0.7.0` source and
-Keycloak charts `1.1.0`, but runtime publication and pin adoption are pending;
-published pins remain unchanged. Mapping reconciliation and transitions disable
+Mapping and plaintext support is implemented in published, verified Tooling
+`0.7.0` and Keycloak charts `1.1.0`, but Base pin adoption is pending;
+existing chart pins remain unchanged. Mapping reconciliation and transitions disable
 the provider until validation succeeds; partial failures leave it disabled for
 retry. Existing tokens and application sessions are not immediately revoked.
 See [Active Directory Federation](keycloak.md#active-directory-federation) for

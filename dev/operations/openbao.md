@@ -378,8 +378,9 @@ LDAP, first satisfy the separate compatible-image publication and adoption gate;
 the secret command cannot bypass it. Follow the
 [federation operator sequence](../authentication/keycloak.md#enable-federation),
 then verify reconciliation without printing Secret values. Tooling runtime
-`0.7.0` is a separate package from this workstation CLI and is still pending
-image publication; no new OpenBao schema or bootstrap ceremony is implied.
+`0.7.0` is a separate package from this workstation CLI; its image is published
+and verified, but Base pin adoption is pending. No new OpenBao schema or
+bootstrap ceremony is implied.
 
 ## Verify Kubernetes State
 
