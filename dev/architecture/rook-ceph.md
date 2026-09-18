@@ -104,6 +104,29 @@ The Job attempts to remove its temporary test resources on exit.
 This Job gates Helm installation and upgrades. It is not continuous storage
 monitoring.
 
+The Ceph 20.2.4 upgrade requires current observed generations for the cluster and
+object store, the selected running image, and completed daemon-key migration.
+Readiness checks the admin, monitor, manager, OSD, crash-collector and exporter
+key statuses plus the object gateway's own key status. Each must report the
+requested generation or newer and a key creation version of at least 20.2.4.
+Already-secure keys do not need another rotation on every later patch upgrade.
+
+After migration is confirmed, the Job requires a newer health sample no older
+than three minutes. It accepts `HEALTH_OK` with no reported problems, or
+`HEALTH_WARN` containing only these warning-severity compatibility checks:
+
+- `AUTH_INSECURE_ROTATING_SERVICE_KEY_TYPE`
+- `AUTH_INSECURE_CLIENT_KEY_TYPE`
+- `AUTH_INSECURE_KEYS_ALLOWED`
+- `AUTH_INSECURE_KEYS_CREATABLE`
+
+These warnings remain visible in Ceph and are named in readiness output. They
+are not muted. Any other warning, any error, malformed or stale status, or an
+incomplete migration blocks readiness. In particular, storage warnings such as
+`BLUESTORE_SLOW_OP_ALERT` and the security errors
+`AUTH_INSECURE_SERVICE_KEY_TYPE` and `AUTH_INSECURE_SERVICE_TICKETS` remain
+blocking. The Job requires another fresh health sample after the RBD test.
+
 Inspect the declared state with:
 
 ```bash
@@ -111,6 +134,43 @@ kubectl get cephclusters,cephblockpools,cephobjectstores -n infra-rook-ceph
 kubectl get storageclasses,volumesnapshotclasses
 kubectl get objectbucketclaims -A
 ```
+
+## Ceph 20.2.4 Upgrade
+
+Follow the [Rook CephX upgrade guide](https://rook.io/docs/rook/v1.20/Storage-Configuration/Advanced/cephx-key-rotation/).
+Upgrade the Rook operator and matching CRDs to 1.20.7 first, and verify that the
+new operator is running before adopting the separate Ceph 20.2.4 revision.
+Keep Rook's upgrade checks enabled. The optional `rook` manager module is
+disabled as recommended upstream for Ceph 20.2.2 through 20.2.4; this does not
+disable the Rook Kubernetes operator.
+
+Before an existing installation adopts the Ceph revision, inspect the current
+daemon generation in the CephCluster spec and all the key statuses listed above,
+without reading key material. For keys that still need migration, select an
+`infraRookCeph.daemonKeyGeneration` greater than every existing key generation
+and no lower than the persisted spec generation. The default `2` supports fresh
+installations and previously unrotated generation-1 keys. Existing higher
+generations require an explicit value. Preserve the selected generation on
+retries and future upgrades; do not remove it or automatically increment it on
+each reconciliation. Rook owns key rotation and the associated Secret updates.
+
+CSI authentication keys retain `aes` compatibility; this upgrade does not
+request CSI-key rotation or restrict allowed ciphers. Migrating CSI to
+`aes256k` is a separate operation requiring Ceph-CSI 3.17.1 or newer and support
+on every mounting node: Linux 7.0 or newer, or verified vendor backports, with
+additional FIPS requirements. Core-daemon migration addresses the service-ticket
+vulnerability without forcing that client migration. Rotating service-ticket
+warnings can remain for two to three hours; do not wipe tickets to accelerate it.
+
+Confirm current independent backups or explicit acceptance of data loss before
+deployment. Downtime acceptance alone does not waive data protection, and a Git
+rollback does not downgrade Ceph data or reverse key rotation. After deployment,
+verify exact daemon versions, key-generation statuses, Flux reconciliation,
+warnings, existing application data access, RGW requests, and manager memory.
+The RGW update rejects unsigned `host` and `x-amz-*` headers in SigV4 requests;
+test existing object-storage consumers rather than disabling that security fix.
+This chart declares no RGW multisite topology; separately configured multisite
+installations must follow the upstream coordinated-upgrade instructions.
 
 ## Model Publication
 
