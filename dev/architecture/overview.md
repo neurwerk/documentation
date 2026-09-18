@@ -101,6 +101,7 @@ namespace-local Kubernetes Secrets used at runtime.
 - [LibreChat](librechat.md)
 - [Docling attachments](docling.md)
 - [Private image attachments (staged)](image-attachments.md)
+- [Face policy and phone photos (source-only)](face-image-policy.md)
 - [Observability](observability.md)
 - [Studio](studio.md)
 - [PII policy engine](pii-policy-engine.md)
