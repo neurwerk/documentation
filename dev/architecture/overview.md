@@ -100,6 +100,7 @@ namespace-local Kubernetes Secrets used at runtime.
 - [Rook/Ceph storage](rook-ceph.md)
 - [LibreChat](librechat.md)
 - [Docling attachments](docling.md)
+- [Private image attachments (staged)](image-attachments.md)
 - [Observability](observability.md)
 - [Studio](studio.md)
 - [PII policy engine](pii-policy-engine.md)

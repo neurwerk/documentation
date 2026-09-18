@@ -94,6 +94,11 @@ requires a verified empty or replacement environment.
 
 ## Before a Supported Upgrade
 
+The staged [private image migration](../architecture/image-attachments.md#rollout-and-migration)
+requires compatible consumers before v2 metadata emission. Keep existing image
+pins and client permissions until their separate publication/adoption approvals;
+older strict consumers reject the new fields even on ordinary text requests.
+
 1. Verify the current and target exact signed tags, target manifest,
    prerequisites, packages, exclusions, and supported transition.
 2. Review any supplied upgrade instructions for the releases being crossed.

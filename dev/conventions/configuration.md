@@ -142,6 +142,14 @@ compatible extProc consumer before setting any explicit mode: older consumers re
 unknown metadata fields. See [Docling attachment modes](../architecture/docling.md#configuration-and-compatibility)
 for configuration and rollout order; service publication is not client adoption.
 
+The staged [private image contract](../architecture/image-attachments.md) keeps
+v1 emission as the default. Only after compatible consumer rollout may clients
+select `attachmentPolicyVersion: 2`, `attachmentMode: process`,
+`faceProtectionEnabled` and `imageForwarding`. Image forwarding defaults to
+`none`; preferred Docling modes are `internal-standard` and `private-vlm`, with
+the old names retained during migration. Do not adopt new metadata or client
+permissions merely because chart source accepts these settings.
+
 ## Secrets
 
 Never commit these values in client or platform configuration:

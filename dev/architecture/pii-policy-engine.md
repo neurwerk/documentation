@@ -123,6 +123,12 @@ JSON. It always evaluates the current request without reading or writing sticky
 session decisions, and ignores `x-pii-session-key`. Limits, policy and mTLS remain
 shared with ordinary analysis. See [Docling](docling.md) for the conversion boundary.
 
+The staged [private image gate](image-attachments.md#pii-decision) reuses this
+endpoint and its original entity findings without changing the Engine API. Any
+detected entity, including a policy `pass`, withholds images in that gate; masked
+text is not evidence that the source pixels are safe. Text-only policy behavior
+is unchanged, and Engine never receives raw images for this feature.
+
 Reversal mappings remain in one extProc request and are discarded after response
 processing. extProc restores only exact, authorized placeholders in supported
 response fields. Invalid placeholders fail closed in structured and protocol
