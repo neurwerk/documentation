@@ -1,8 +1,8 @@
 # Private Image Attachments
 
-This page describes the published version-two baseline. The source-only
+This page describes the published version-two baseline. The
 [face policy and phone photo extension](face-image-policy.md) adds version three;
-it needs new service images and explicit activation before use.
+its verified `0.10.0` CPU runtimes need deployment and explicit activation before use.
 
 Status: source merged on 2026-09-18 in
 [extProc #31](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/31)

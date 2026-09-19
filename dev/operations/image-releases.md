@@ -136,6 +136,19 @@ No v2 activation, client permissions or stable platform tags changed. See
 [private image release evidence](../architecture/image-attachments.md#release-evidence)
 for the boundary between source availability, deployment and activation.
 
+### Face Policy 0.10.0 CPU-Only Adoption
+
+On 2026-09-19 the operator authorized PII Engine `0.10.0-cpu` publication and Base
+adoption without waiting for NVIDIA or the combined GitHub Release. The successful
+[CPU job](https://github.com/neurwerk/k8s_stack_pii_engine/actions/runs/35427564628/job/105856180059)
+and its digest artifact replace only the combined-release prerequisite for this
+exact CPU image; registry digest, platform and source/version verification passed.
+ExtProc `0.10.0` completed its normal image and GitHub Release workflow.
+See [face policy publication evidence](../architecture/face-image-policy.md#runtime-publication)
+for exact sources and digests, and [Base #207](https://github.com/neurwerk/k8s_stack_base/pull/207)
+for pin adoption. Metadata remains v1; client activation, stable publication,
+model deployment and live cluster checks are separate.
+
 ### Auxiliary Tooling Image
 
 The Tooling image is an auxiliary image in its consuming charts. Bump each

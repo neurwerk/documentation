@@ -9,13 +9,45 @@ Status: source merged on 2026-09-18, with green Required CI:
 Parent [Base #203](https://github.com/neurwerk/k8s_stack_base/issues/203) and both
 service issues are closed. AgentGateway chart `1.6.0` and LibreChat shared chart
 `1.5.0` are on Base `main` (alpha source), not stable `v0.3.8`.
-This is not a service release, deployment, or client activation. Base still pins
-PII Engine and extProc `0.9.0`; those images cannot use this contract.
+PII Engine `0.10.0-cpu` and extProc `0.10.0` are now published and verified.
+Base [#207](https://github.com/neurwerk/k8s_stack_base/pull/207) merged the pins at
+`8c19f049a86317b1d4d7e365b0f02f156f18d6dd` on 2026-09-19 with green Required CI.
+Client activation and live deployment verification remain separate.
 
 The [published image baseline](image-attachments.md) remains unchanged until
 operators explicitly select attachment policy version three. This page defines
 the new behavior alongside the existing [Docling](docling.md) and
 [PII Engine](pii-policy-engine.md) contracts.
+
+## Runtime Publication
+
+On 2026-09-19 the operator authorized publishing both runtimes and adopting the
+verified CPU images without waiting for PII Engine's NVIDIA build or combined
+GitHub Release. This is a CPU-only adoption exception, not a waiver of image
+verification or permission to activate clients.
+
+- PII [release PR #19](https://github.com/neurwerk/k8s_stack_pii_engine/pull/19)
+  sets `v0.10.0` at `dbef8e841b704fe31abafce6b3ea72a9081644ed`.
+  The [CPU job](https://github.com/neurwerk/k8s_stack_pii_engine/actions/runs/35427564628/job/105856180059)
+  succeeded; its `pii-engine-cpu-digest` artifact is the publication evidence.
+- extProc [release PR #37](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/pull/37)
+  sets `v0.10.0` at `8eac7c2fd9c88283fe40e1a75276ddfdeb7d0cf7`.
+  Its [workflow](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/actions/runs/35427564491)
+  and [GitHub Release](https://github.com/neurwerk/k8s_stack_agentgateway_extproc/releases/tag/v0.10.0)
+  completed successfully.
+
+| Image under `ghcr.io/neurwerk/` | Independently verified digest |
+| --- | --- |
+| `k8s-stack-pii-engine:0.10.0-cpu` | `sha256:ee535afd041a1857dbc7aadcab0ff87c68c4a1bf7771c70f03136c5c96d6dba4` |
+| `k8s-stack-agentgateway-extproc:0.10.0` | `sha256:f8d3e7a204588c00e170574ef091123109f01a23c055e2161cbed383452a0b14` |
+
+Registry manifest/config hashes, `linux/amd64`, source revisions and OCI version
+labels matched the CPU artifact and extProc release. This record does not certify
+the NVIDIA image. The Base update preserves metadata v1, upload permissions,
+client values, model selection and stable tags; it adds no new tests.
+Engine/model-sync chart versions are `1.0.5`/`1.0.4`, extProc is `1.3.2`, and
+Docling's documentation-only update is `0.4.2`. Base `make check` and
+`make release-check` passed; parent release issue #206 and its two children are closed.
 
 ## Processing
 
@@ -78,7 +110,8 @@ monitorPiiEngine:
 ```
 
 The new Engine defaults to `block` when this setting is absent. Base deliberately
-does not emit `faces` in shipped defaults because the old Engine rejects it.
+does not emit `faces` in shipped defaults, keeping older deployed replicas
+compatible until an operator explicitly enables the new policy.
 
 | Action | Result |
 | --- | --- |
@@ -172,13 +205,12 @@ unverified; enabling the chart option does not itself establish end-to-end use.
 
 ## Adoption
 
-Merge compatible source, then separately authorize publication and verify both
-service images before pinning them in Base. Deploy compatible Engine and extProc
+Publication and CPU image verification are complete. Deploy compatible Engine and extProc
 before adding face configuration or emitting v3 metadata. Keep existing defaults,
 permissions, private-reader selection and client values unchanged until explicitly
 enabled. Restore v1/v2-compatible configuration before rolling back a consumer.
-Source merges alone do not make this available in the pinned alpha runtime or
-in an existing stable platform tag.
+Base pin adoption makes these images available to alpha reconciliation, but does
+not establish live deployment or enable the feature. Stable `v0.3.8` is unchanged.
 
 Validation uses the normal repository checks and focused regression cases.
 Local Engine-to-extProc integration and rendered-metadata consumer checks verify
