@@ -224,3 +224,27 @@ skips. Its rendered v1/v2/v3 catalogs passed the real extProc consumer check.
 A local in-process Engine/extProc probe passed 76 boundary, dispatch and invalid
 reply checks; pinned Docling source verification also confirmed the native image
 format and CPU pipeline. No cluster, live model or browser test was performed.
+
+## Alpha Activation Verification
+
+On 2026-09-19 an operator-authorized CPU alpha client enabled v3 and image uploads
+after the exact Engine/extProc `0.10.0` images were observed Ready. Its central
+face action is `text-only`; all 28 destinations retain `imageForwarding: none`,
+face protection, and their existing text-PII settings, with no image reroute.
+Client CI and platform compatibility passed, and Flux applied the client change.
+
+Synthetic JPEG, PNG and HEIC receipts passed through the installed extProc request
+pipeline, live CPU Docling over verified HTTPS, and live PII Engine over mTLS.
+Printed text was extracted, face scans completed, and outgoing request bodies
+contained no image parts or data URIs. A separate synthetic trusted face-count
+request confirmed the live central `text-only` action; it is not detector-accuracy
+evidence. No downstream chat model was called by these checks.
+
+The running LibreChat configuration matched its image-enabled ConfigMap, public
+readiness returned HTTP 200, affected deployments and HelmReleases became Ready,
+and Flux's applications health check passed after dependency reconciliation.
+Existing application/cache volumes remained Bound and Ceph reported `HEALTH_OK`.
+Recent operational logs were inspected without displaying request contents;
+readiness recovered after rollout warnings. A browser upload was not manually exercised,
+so this confirms the deployed configuration and processing path, not the complete
+browser/storage/chat round trip. No external VLM or GPU was introduced.
